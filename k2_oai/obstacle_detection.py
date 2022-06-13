@@ -350,3 +350,37 @@ def detect_obstacles(
         )
 
     return obstacles_blobs, background_with_bboxes, bounding_boxes_coordinates
+
+
+def detect_obstacles_composite(
+    im_in: ndarray,
+    source_image: ndarray,
+    box_or_polygon: str = "box",
+    min_area: int | str = 0,
+    padding_percentage: int = 0,
+    tol: int = 25
+):
+  #binarization
+  im_masked = cv.bitwise_and(im_in[:, :, 0], im_in[:, :, 3])
+  n_zeros_mask = np.sum(im_in[:, :, 3] == 0)
+
+  histSize = 64
+  hist_gs = cv.calcHist([im_in],[0],None,[histSize],[0,256], accumulate=False)
+  hist_gs[0] = hist_gs[0] - n_zeros_mask
+
+  n_max = np.argmax(np.array(hist_gs))
+  n_max = n_max*256/histSize
+
+  retval, im_tresh_light = cv.threshold(im_masked, n_max+tol, 255, cv.THRESH_BINARY)
+  retval, im_tresh_dark = cv.threshold(im_masked, n_max-tol, 255, cv.THRESH_BINARY_INV)
+
+
+  #blob analysis
+  im_l_seg, im_l_bb, rect_coord_l = detect_obstacles(im_tresh_light, source_image, 
+                                                    box_or_polygon, min_area, padding_percentage)
+  im_d_seg, im_d_bb, rect_coord_d = detect_obstacles(im_tresh_dark, source_image, 
+                                                    box_or_polygon, min_area, padding_percentage)
+
+  im_result = cv.bitwise_or(im_l_seg, im_d_seg)
+
+  return im_result

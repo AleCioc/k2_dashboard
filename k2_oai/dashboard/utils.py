@@ -17,6 +17,7 @@ from k2_oai.io.dropbox_paths import DROPBOX_RAW_PHOTOS_ROOT
 from k2_oai.obstacle_detection import (
     binarization_step,
     detect_obstacles,
+    detect_obstacles_composite,
     filtering_step,
     morphological_opening_step,
 )
@@ -270,8 +271,20 @@ def obstacle_detection_pipeline(
         min_area="auto",
     )
 
+    if tolerance == None:
+        tolerance = 25
+
+    blobs_composite = detect_obstacles_composite(
+        im_in=filtered_roof,
+        source_image=greyscale_roof,
+        box_or_polygon=boundary_type,
+        min_area="auto",
+        tol=tolerance
+    )
+
+
     if return_filtered_roof:
-        return blobs, roof_with_bboxes, obstacles_coordinates, filtered_roof
+        return blobs, roof_with_bboxes, obstacles_coordinates, filtered_roof, blobs_composite
     return blobs, roof_with_bboxes, obstacles_coordinates
 
 

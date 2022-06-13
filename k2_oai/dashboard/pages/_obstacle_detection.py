@@ -214,6 +214,7 @@ def obstacle_detection_page():
         roof_with_bboxes,
         obstacles_coordinates,
         filtered_gs_roof,
+        obstacle_blobs_composite
     ) = utils.obstacle_detection_pipeline(
         greyscale_roof=greyscale_roof,
         sigma=chosen_sigma,
@@ -305,7 +306,13 @@ def obstacle_detection_page():
         caption=f"Auto Labelled {chosen_drawing_technique}",
     )
 
-    st_data, st_save = st.columns((6, 1))
+    st_results_widgets[0].image(
+        (obstacle_blobs_composite * 60) % 256,
+        use_column_width=True,
+        caption="Composite blobs",
+    )
+
+    st_data, st_save = st.columns((7, 1))
 
     with st_data:
         with st.expander("View stored hyperparameters"):
