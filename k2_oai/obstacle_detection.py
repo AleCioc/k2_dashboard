@@ -52,6 +52,22 @@ def filtering_step(input_image: ndarray, sigma: int, method: str = "b") -> ndarr
         The filtered image, with 4 channels (BGRA).
     """
 
+    gaus_candidate = np.ceil(np.divide(input_image.shape, 100)).astype(int)
+    gaus_candidate = np.mod(gaus_candidate, 2)
+
+    i = input_image.shape[0]
+    j = input_image.shape[1]
+
+    i = np.floor(i/200).astype(int)
+    j = np.floor(j/200).astype(int)
+
+    if i%2 == 0:
+        i = i+1
+
+    if j%2 == 0:
+        j = j+1
+
+
     def _bilateral_filter(image, _sigma):
         return cv.bilateralFilter(src=image, d=9, sigmaColor=_sigma, sigmaSpace=_sigma)
 
@@ -74,7 +90,14 @@ def filtering_step(input_image: ndarray, sigma: int, method: str = "b") -> ndarr
         return cv.cvtColor(filtered_image, cv.COLOR_GRAY2BGRA)
 
     else:
-        return cv.GaussianBlur(input_image, (0, 0), sigma)
+        sigma_g = np.floor(np.divide(input_image.shape, 30)).astype(int)
+        if sigma_g[0]%2 == 0:
+            sigma_g[0] = sigma_g[0]+1
+
+        if sigma_g[1]%2 == 0:
+            sigma_g[1] = sigma_g[1]+1
+
+        return cv.GaussianBlur(input_image, (sigma_g[0], sigma_g[1]), 0)
 
 
 def _compute_otsu_thresholding(input_image, zeros):
