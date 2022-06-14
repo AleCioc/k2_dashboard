@@ -19,6 +19,7 @@ from k2_oai.obstacle_detection import (
     detect_obstacles,
     detect_obstacles_composite,
     edge_detection,
+    hough_transform,
     filtering_step,
     morphological_opening_step,
 )
@@ -284,9 +285,10 @@ def obstacle_detection_pipeline(
     )
 
     edges_im = edge_detection(filtered_roof)
+    hough_im = hough_transform(greyscale_roof)
 
     if return_filtered_roof:
-        return blobs, roof_with_bboxes, obstacles_coordinates, filtered_roof, blobs_composite, edges_im
+        return blobs, roof_with_bboxes, obstacles_coordinates, filtered_roof, blobs_composite, edges_im, hough_im
     return blobs, roof_with_bboxes, obstacles_coordinates
 
 

@@ -215,7 +215,8 @@ def obstacle_detection_page():
         obstacles_coordinates,
         filtered_gs_roof,
         obstacle_blobs_composite,
-        edges_image
+        edges_image,
+        hough_image
     ) = utils.obstacle_detection_pipeline(
         greyscale_roof=greyscale_roof,
         sigma=chosen_sigma,
@@ -319,7 +320,13 @@ def obstacle_detection_page():
         caption="Edge detection",
     )
 
-    st_data, st_save = st.columns((7, 1))
+    st_results_widgets[0].image(
+        hough_image,
+        use_column_width=True,
+        caption="Hough transform",
+    )
+
+    st_data, st_save = st.columns((8, 1))
 
     with st_data:
         with st.expander("View stored hyperparameters"):

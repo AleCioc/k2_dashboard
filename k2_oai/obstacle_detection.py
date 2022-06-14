@@ -305,6 +305,19 @@ def _get_bounding_polygon(blobs, background, stats, min_area):
     return polygon_coordinates, background
 
 
+def image_background(im_in, histSize):
+    im_masked = cv.bitwise_and(im_in[:, :, 0], im_in[:, :, 3])
+    n_zeros_mask = np.sum(im_in[:, :, 3] == 0)
+
+    hist_gs = cv.calcHist([im_in],[0],None,[histSize],[0,256], accumulate=False)
+    hist_gs[0] = hist_gs[0] - n_zeros_mask
+
+    n_max = np.argmax(np.array(hist_gs))
+    n_max = n_max*256/histSize
+
+    return im_masked, n_max
+
+
 def detect_obstacles(
     blurred_roof: ndarray,
     source_image: ndarray,
@@ -384,15 +397,7 @@ def detect_obstacles_composite(
     tol: int = 25
 ):
   #binarization
-  im_masked = cv.bitwise_and(im_in[:, :, 0], im_in[:, :, 3])
-  n_zeros_mask = np.sum(im_in[:, :, 3] == 0)
-
-  histSize = 64
-  hist_gs = cv.calcHist([im_in],[0],None,[histSize],[0,256], accumulate=False)
-  hist_gs[0] = hist_gs[0] - n_zeros_mask
-
-  n_max = np.argmax(np.array(hist_gs))
-  n_max = n_max*256/histSize
+  im_masked, n_max = image_background(im_in, 64)
 
   retval, im_tresh_light = cv.threshold(im_masked, n_max+tol, 255, cv.THRESH_BINARY)
   retval, im_tresh_dark = cv.threshold(im_masked, n_max-tol, 255, cv.THRESH_BINARY_INV)
@@ -412,6 +417,52 @@ def detect_obstacles_composite(
 def edge_detection(
     im_in: ndarray
 ):
-    edges = cv.Canny(im_in, threshold1=25, threshold2=80)
+    edges = cv.Canny(im_in, threshold1=70, threshold2=100)
 
     return edges
+
+
+def hough_transform(
+    im_in: ndarray
+):
+    #creazione oggetto
+    houghTransformer = cv.createGeneralizedHoughGuil()
+
+    #creazione template rettangolare
+    templ_shape = np.divide(im_in.shape, 3).astype(int)
+    im_masked, background = image_background(im_in, 64)
+
+    template = np.full((50, 80), 0, dtype=np.uint8)
+    template[0, :] = 255
+    template[-1, :] = 255
+    template[:, 0] = 255
+    template[:, -1] = 255
+
+    houghTransformer.setTemplate(template)
+    houghTransformer.setPosThresh(80)
+    houghTransformer.setScaleThresh(7000)
+    houghTransformer.setAngleThresh(300000)
+    houghTransformer.setMaxScale(2.0)
+
+    #detection
+    #filtered_im = filtering_step(im_in, 3, 'g')
+    #bin_im = binarization_step(filtered_im, "c", composite_tolerance=20)
+    edges = cv.Canny(im_in, threshold1=70, threshold2=100)
+    positions,votes = houghTransformer.detect(edges)
+    print(positions)
+
+    #visualizzazione risultati
+    positions_list = positions[0]
+    output_image = im_in.copy()
+    i = 0
+    for x, y, scale, orientation in positions_list:
+        halfHeight = template.shape[0] / 2. * scale
+        halfWidth = template.shape[1] / 2. * scale
+        p1 = (int(x - halfWidth), int(y - halfHeight))
+        p2 = (int(x + halfWidth), int(y + halfHeight))
+        print("x = {}, y = {}, scale = {}, orientation = {}, p1 = {}, p2 = {}".format(x, y, scale, orientation, p1, p2))
+        print("pos_v = {}, scale_v = {}, angle_v = {}".format(votes[0, i, 0], votes[0, i, 1], votes[0, i, 2]))
+        cv.rectangle(output_image, p1, p2, (0,255,0,255))
+        i = i+1
+
+    return output_image
