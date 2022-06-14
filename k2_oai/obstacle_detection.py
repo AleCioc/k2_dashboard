@@ -452,17 +452,18 @@ def hough_transform(
     print(positions)
 
     #visualizzazione risultati
-    positions_list = positions[0]
     output_image = im_in.copy()
-    i = 0
-    for x, y, scale, orientation in positions_list:
-        halfHeight = template.shape[0] / 2. * scale
-        halfWidth = template.shape[1] / 2. * scale
-        p1 = (int(x - halfWidth), int(y - halfHeight))
-        p2 = (int(x + halfWidth), int(y + halfHeight))
-        print("x = {}, y = {}, scale = {}, orientation = {}, p1 = {}, p2 = {}".format(x, y, scale, orientation, p1, p2))
-        print("pos_v = {}, scale_v = {}, angle_v = {}".format(votes[0, i, 0], votes[0, i, 1], votes[0, i, 2]))
-        cv.rectangle(output_image, p1, p2, (0,255,0,255))
-        i = i+1
+    if positions is not None:
+        positions_list = positions[0]
+        i = 0
+        for x, y, scale, orientation in positions_list:
+            halfHeight = template.shape[0] / 2. * scale
+            halfWidth = template.shape[1] / 2. * scale
+            p1 = (int(x - halfWidth), int(y - halfHeight))
+            p2 = (int(x + halfWidth), int(y + halfHeight))
+            print("x = {}, y = {}, scale = {}, orientation = {}, p1 = {}, p2 = {}".format(x, y, scale, orientation, p1, p2))
+            print("pos_v = {}, scale_v = {}, angle_v = {}".format(votes[0, i, 0], votes[0, i, 1], votes[0, i, 2]))
+            cv.rectangle(output_image, p1, p2, (0,255,0,255))
+            i = i+1
 
     return output_image
