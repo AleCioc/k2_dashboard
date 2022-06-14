@@ -18,6 +18,7 @@ from k2_oai.obstacle_detection import (
     binarization_step,
     detect_obstacles,
     detect_obstacles_composite,
+    edge_detection,
     filtering_step,
     morphological_opening_step,
 )
@@ -282,9 +283,10 @@ def obstacle_detection_pipeline(
         tol=tolerance
     )
 
+    edges_im = edge_detection(filtered_roof)
 
     if return_filtered_roof:
-        return blobs, roof_with_bboxes, obstacles_coordinates, filtered_roof, blobs_composite
+        return blobs, roof_with_bboxes, obstacles_coordinates, filtered_roof, blobs_composite, edges_im
     return blobs, roof_with_bboxes, obstacles_coordinates
 
 

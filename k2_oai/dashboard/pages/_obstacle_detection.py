@@ -214,7 +214,8 @@ def obstacle_detection_page():
         roof_with_bboxes,
         obstacles_coordinates,
         filtered_gs_roof,
-        obstacle_blobs_composite
+        obstacle_blobs_composite,
+        edges_image
     ) = utils.obstacle_detection_pipeline(
         greyscale_roof=greyscale_roof,
         sigma=chosen_sigma,
@@ -310,6 +311,12 @@ def obstacle_detection_page():
         (obstacle_blobs_composite * 60) % 256,
         use_column_width=True,
         caption="Composite blobs",
+    )
+
+    st_results_widgets[1].image(
+        edges_image,
+        use_column_width=True,
+        caption="Edge detection",
     )
 
     st_data, st_save = st.columns((7, 1))

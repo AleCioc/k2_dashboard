@@ -407,3 +407,11 @@ def detect_obstacles_composite(
   im_result = cv.bitwise_or(im_l_seg, im_d_seg)
 
   return im_result
+
+
+def edge_detection(
+    im_in: ndarray
+):
+    edges = cv.Canny(im_in, threshold1=25, threshold2=80)
+
+    return edges
