@@ -18,8 +18,6 @@ from k2_oai.obstacle_detection import (
     binarization_step,
     detect_obstacles,
     detect_obstacles_composite,
-    edge_detection,
-    hough_transform,
     filtering_step,
     morphological_opening_step,
 )
@@ -235,7 +233,7 @@ def load_and_crop_roof_from_roof_id(
     
     greyscale_roof = rotate_and_crop_roof(greyscale_image, roof_px_coord)
 
-    return k2_labelled_image, bgr_roof, greyscale_roof
+    return k2_labelled_image, bgr_roof, greyscale_roof, roof_px_coord, obstacles_px_coord
 
 
 def obstacle_detection_pipeline(
@@ -276,7 +274,7 @@ def obstacle_detection_pipeline(
     if tolerance == None:
         tolerance = 25
 
-    blobs_composite = detect_obstacles_composite(
+    blobs_composite, im_evaluation = detect_obstacles_composite(
         im_in=filtered_roof,
         source_image=greyscale_roof,
         box_or_polygon=boundary_type,
@@ -284,11 +282,8 @@ def obstacle_detection_pipeline(
         tol=tolerance
     )
 
-    edges_im = edge_detection(filtered_roof)
-    hough_im = hough_transform(greyscale_roof)
-
     if return_filtered_roof:
-        return blobs, roof_with_bboxes, obstacles_coordinates, filtered_roof, blobs_composite, edges_im, hough_im
+        return blobs, roof_with_bboxes, obstacles_coordinates, filtered_roof, blobs_composite, im_evaluation
     return blobs, roof_with_bboxes, obstacles_coordinates
 
 

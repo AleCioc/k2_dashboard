@@ -298,7 +298,7 @@ def _get_bounding_polygon(blobs, background, stats, min_area):
         contours, hierarchy = cv.findContours(
             obst_im.astype(np.uint8), cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE
         )
-        approximated_boundary = cv.approxPolyDP(contours[0], 5.0, True)
+        approximated_boundary = cv.approxPolyDP(contours[0], 2.5, True)
         cv.polylines(background, [approximated_boundary], True, (255, 0, 0), 2)
         polygon_coordinates.append(approximated_boundary)
 
@@ -404,14 +404,18 @@ def detect_obstacles_composite(
 
 
   #blob analysis
-  im_l_seg, im_l_bb, rect_coord_l = detect_obstacles(im_tresh_light, source_image, 
+  im_open_light = morphological_opening_step(im_tresh_light)
+  im_open_dark = morphological_opening_step(im_tresh_dark)
+
+  im_l_seg, im_l_bb, rect_coord_l = detect_obstacles(im_open_light, source_image, 
                                                     box_or_polygon, min_area, padding_percentage)
-  im_d_seg, im_d_bb, rect_coord_d = detect_obstacles(im_tresh_dark, source_image, 
+  im_d_seg, im_d_bb, rect_coord_d = detect_obstacles(im_open_dark, source_image, 
                                                     box_or_polygon, min_area, padding_percentage)
 
   im_result = cv.bitwise_or(im_l_seg, im_d_seg)
+  im_evaluation = cv.bitwise_or(im_open_dark, im_open_light)
 
-  return im_result
+  return im_result, im_evaluation
 
 
 def edge_detection(

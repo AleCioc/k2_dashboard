@@ -9,6 +9,7 @@ import streamlit as st
 
 from k2_oai.dashboard import components, utils
 from k2_oai.io.dropbox_paths import DROPBOX_HYPERPARAM_ANNOTATIONS_PATH
+from k2_oai.experimental_metrics import surface_absolute_error
 
 __all__ = ["obstacle_detection_page"]
 
@@ -127,7 +128,7 @@ def obstacle_detection_page():
 
         st.markdown("---")
 
-    k2_labelled_image, bgr_roof, greyscale_roof = utils.load_and_crop_roof_from_roof_id(
+    k2_labelled_image, bgr_roof, greyscale_roof, roof_px_coord, obstacles_px_coord = utils.load_and_crop_roof_from_roof_id(
         int(chosen_roof_id), photos_metadata, chosen_folder
     )
     # +-----------------------------+
@@ -215,8 +216,7 @@ def obstacle_detection_page():
         obstacles_coordinates,
         filtered_gs_roof,
         obstacle_blobs_composite,
-        edges_image,
-        hough_image
+        im_evaluation
     ) = utils.obstacle_detection_pipeline(
         greyscale_roof=greyscale_roof,
         sigma=chosen_sigma,
@@ -227,6 +227,11 @@ def obstacle_detection_page():
         boundary_type=chosen_drawing_technique,
         return_filtered_roof=True,
     )
+
+    error, im_error = surface_absolute_error(roof_px_coord, 
+                                             obstacles_px_coord,
+                                             im_evaluation,
+                                             20)
 
     # +-------------------------+
     # | Roof & Color Histograms |
@@ -315,18 +320,12 @@ def obstacle_detection_page():
     )
 
     st_results_widgets[1].image(
-        edges_image,
+        im_error,
         use_column_width=True,
-        caption="Edge detection",
+        caption="Error",
     )
 
-    st_results_widgets[0].image(
-        hough_image,
-        use_column_width=True,
-        caption="Hough transform",
-    )
-
-    st_data, st_save = st.columns((8, 1))
+    st_data, st_save = st.columns((6, 1))
 
     with st_data:
         with st.expander("View stored hyperparameters"):

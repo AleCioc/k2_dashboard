@@ -123,6 +123,7 @@ def draw_obstacles(
     input_image: ndarray,
     roof_coordinates: str | ndarray,
     obstacle_coordinates: str | list[str] | None,
+    fill: bool = False
 ) -> ndarray:
     """Draws obstacle labels on the input image from their coordinates.
 
@@ -149,6 +150,8 @@ def draw_obstacles(
         roof_coordinates, dtype="int32", sort_coordinates=True
     )
 
+    black_background = np.zeros(input_image.shape, np.uint8)
+
     # rectangular roof
     if len(coord) == 4:
         rotation_matrix = _compute_rotation_matrix(coord)
@@ -164,6 +167,7 @@ def draw_obstacles(
 
             pts_new = np.transpose(pts_new)
             cv.polylines(target_image,[pts_new], True, (255,0,0,255), 1, lineType=cv.LINE_4)
+            cv.fillConvexPoly(black_background, pts_new, (255, 255, 255, 255), 1)
 
     # polygonal roof
     else:
@@ -177,8 +181,12 @@ def draw_obstacles(
 
             points_offset = np.array(points_list).reshape((-1, 1, 2))
             cv.polylines(target_image, [points_offset], True, (255, 0, 0, 255), 1, lineType=cv.LINE_4)
+            cv.fillConvexPoly(black_background, points_offset, (255, 255, 255, 255), 1)
 
-    return target_image
+    if fill:
+        return black_background
+    else:
+        return target_image
 
 
 def _compute_rotation_matrix(coordinates):
