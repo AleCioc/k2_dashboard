@@ -231,7 +231,7 @@ def obstacle_detection_page():
     error, im_error = surface_absolute_error(roof_px_coord, 
                                              obstacles_px_coord,
                                              im_evaluation,
-                                             20)
+                                             2)
 
     # +-------------------------+
     # | Roof & Color Histograms |

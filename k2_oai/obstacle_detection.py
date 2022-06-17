@@ -313,9 +313,45 @@ def image_background(im_in, histSize):
     hist_gs[0] = hist_gs[0] - n_zeros_mask
 
     n_max = np.argmax(np.array(hist_gs))
-    n_max = n_max*256/histSize
+    n_max_n = n_max*256/histSize
 
-    return im_masked, n_max
+
+    #calcolo mean e variance
+    mean = 0
+    hist_norm = np.divide(hist_gs, im_masked.size)
+    for i in range(histSize):
+        mean = mean + i*hist_norm[i]
+    
+    var = 0
+    for i in range(histSize):
+        var = var + (i - mean)**2 * hist_norm[i]
+
+
+    #TODO: calcolo tolleranza superiore e inferiore
+    tol_sup = mean
+    for j in range(int(mean), histSize, 1):
+        print(hist_norm[j])
+        if hist_norm[j] <= hist_norm[int(mean)]*0.10:
+            tol_sup = j - mean
+            break
+
+    tol_inf = mean
+    for j in range(int(mean), 0, -1):
+        if hist_norm[j] <= hist_norm[int(mean)]*0.10:
+            tol_inf = mean - j
+            break
+    
+    tol_sup = tol_sup * 256/histSize
+    tol_inf = tol_inf * 256/histSize
+
+    #print("histogram: ", np.transpose(hist_gs))
+    #print("n_max: ", n_max_n)
+    #print("mean: ", mean)
+    #print("var: ", var)
+    #print("tol sup: ", tol_sup)
+    #print("tol inf: ", tol_inf)
+
+    return im_masked, n_max_n, int(2*var)
 
 
 def detect_obstacles(
@@ -396,26 +432,27 @@ def detect_obstacles_composite(
     padding_percentage: int = 0,
     tol: int = 25
 ):
-  #binarization
-  im_masked, n_max = image_background(im_in, 64)
 
-  retval, im_tresh_light = cv.threshold(im_masked, n_max+tol, 255, cv.THRESH_BINARY)
-  retval, im_tresh_dark = cv.threshold(im_masked, n_max-tol, 255, cv.THRESH_BINARY_INV)
+    im_masked, n_max, tol = image_background(im_in, 64)
+
+    #binarization
+    retval, im_tresh_light = cv.threshold(im_masked, n_max+tol, 255, cv.THRESH_BINARY)
+    retval, im_tresh_dark = cv.threshold(im_masked, n_max-tol, 255, cv.THRESH_BINARY_INV)
 
 
-  #blob analysis
-  im_open_light = morphological_opening_step(im_tresh_light)
-  im_open_dark = morphological_opening_step(im_tresh_dark)
+    #blob analysis
+    im_open_light = morphological_opening_step(im_tresh_light)
+    im_open_dark = morphological_opening_step(im_tresh_dark)
 
-  im_l_seg, im_l_bb, rect_coord_l = detect_obstacles(im_open_light, source_image, 
-                                                    box_or_polygon, min_area, padding_percentage)
-  im_d_seg, im_d_bb, rect_coord_d = detect_obstacles(im_open_dark, source_image, 
-                                                    box_or_polygon, min_area, padding_percentage)
+    im_l_seg, im_l_bb, rect_coord_l = detect_obstacles(im_open_light, source_image, 
+                                                        box_or_polygon, min_area, padding_percentage)
+    im_d_seg, im_d_bb, rect_coord_d = detect_obstacles(im_open_dark, source_image, 
+                                                        box_or_polygon, min_area, padding_percentage)
 
-  im_result = cv.bitwise_or(im_l_seg, im_d_seg)
-  im_evaluation = cv.bitwise_or(im_open_dark, im_open_light)
+    im_result = cv.bitwise_or(im_l_seg, im_d_seg)
+    im_evaluation = cv.bitwise_or(im_open_dark, im_open_light)
 
-  return im_result, im_evaluation
+    return im_result, im_evaluation
 
 
 def edge_detection(
