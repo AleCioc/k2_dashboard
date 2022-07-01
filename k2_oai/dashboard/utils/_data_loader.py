@@ -12,8 +12,8 @@ from k2_oai import dropbox as dbx
 from k2_oai.data import load
 from k2_oai.dropbox import DROPBOX_RAW_PHOTOS_ROOT
 from k2_oai.utils.images import (
-    draw_labels_on_cropped_roof,
-    draw_labels_on_photo,
+    draw_obstacles_on_cropped_roof,
+    draw_roofs_and_obstacles_on_photo,
     rotate_and_crop_roof,
 )
 
@@ -195,7 +195,9 @@ def st_load_photo_and_roof(
             roof_id, photos_metadata, chosen_folder, bgr_only=True
         )
 
-    labelled_photo = draw_labels_on_photo(photo, roof_px_coord, obstacles_px_coord)
+    labelled_photo = draw_roofs_and_obstacles_on_photo(
+        photo, roof_px_coord, obstacles_px_coord
+    )
     # labelled_photo = experimental_draw_labels(
     #     photo,
     #     roof_px_coord,
@@ -203,7 +205,9 @@ def st_load_photo_and_roof(
     # )
 
     roof = rotate_and_crop_roof(photo, roof_px_coord)
-    labelled_roof = draw_labels_on_cropped_roof(roof, roof_px_coord, obstacles_px_coord)
+    labelled_roof = draw_obstacles_on_cropped_roof(
+        roof, roof_px_coord, obstacles_px_coord
+    )
 
     return photo, roof, labelled_photo, labelled_roof
 
