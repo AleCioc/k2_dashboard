@@ -6,7 +6,7 @@ from k2_oai.dashboard import pages
 from k2_oai.dashboard.components import login
 
 
-def main():
+def run():
     st.set_page_config(
         page_title="K2 <-> OAI",
         page_icon=":house_buildings:",
@@ -41,7 +41,3 @@ def main():
         )
 
         pages_options[app_mode]()
-
-
-if __name__ == "__main__":
-    main()
