@@ -16,8 +16,9 @@ __all__ = [
     "read_image_from_bytestring",
     "pad_image",
     "downsample_image",
-    "draw_labels_on_cropped_roof",
-    "draw_labels_on_photo",
+    "draw_obstacles_on_cropped_roof",
+    "draw_obstacles_on_black_fill",
+    "draw_roofs_and_obstacles_on_photo",
     "rotate_and_crop_roof",
 ]
 
@@ -51,7 +52,7 @@ def read_image_from_bytestring(
 
 def pad_image(
     image: ndarray,
-    padding_percentage: int | None = None,
+    padding_percentage: int = 0,
 ) -> tuple[ndarray, tuple[int, int]]:
     """Applies padding to an image (e.g. to remove borders).
 
@@ -69,8 +70,8 @@ def pad_image(
         The padded image and the margins for the padding.
     """
     if padding_percentage not in range(0, 101):
-        raise ValueError("Parameter `padding` must range between 1 and 100.")
-    elif padding_percentage is None or padding_percentage == 0:
+        raise ValueError("Parameter `padding` must range between 0 and 100.")
+    elif padding_percentage == 0:
         margin_h, margin_w = 0, 0
     else:
         margin_h, margin_w = (
@@ -103,10 +104,10 @@ def downsample_image(image, downsampling_factor):
     return output_image
 
 
-def draw_labels_on_photo(
+def draw_roofs_and_obstacles_on_photo(
     photo: ndarray,
-    roof_coordinates: str | ndarray,
-    obstacle_coordinates: str | list[str] | None,
+    roof_coordinates: str,
+    obstacle_coordinates: str | None,
 ):
     """Draws roof and obstacle labels on the input image from their coordinates.
 
@@ -127,22 +128,24 @@ def draw_labels_on_photo(
     photo_copy = photo.copy()
 
     points: ndarray = parse_str_as_coordinates(roof_coordinates).reshape((-1, 1, 2))
-    result: ndarray = cv.polylines(photo_copy, [points], True, (0, 0, 255), 2)
+    labelled_image: ndarray = cv.polylines(photo_copy, [points], True, (0, 0, 255), 2)
 
     if obstacle_coordinates is None:
-        return result
+        return labelled_image
 
     for obst in obstacle_coordinates:
         points: ndarray = parse_str_as_coordinates(obst).reshape((-1, 1, 2))
-        result: ndarray = cv.polylines(photo_copy, [points], True, (255, 0, 0), 2)
+        labelled_image: ndarray = cv.polylines(
+            photo_copy, [points], True, (255, 0, 0), 2
+        )
 
-    return result
+    return labelled_image
 
 
-def draw_labels_on_cropped_roof(
+def draw_obstacles_on_cropped_roof(
     cropped_roof: ndarray,
-    roof_coordinates: str | ndarray,
-    obstacle_coordinates: str | list[str] | None,
+    roof_coordinates: str,
+    obstacle_coordinates: str,
 ) -> ndarray:
     """Draws roof and obstacle labels on the input image from their coordinates.
 
@@ -160,31 +163,36 @@ def draw_labels_on_cropped_roof(
     ndarray
         Image with labels drawn.
     """
-    target_image = cropped_roof.copy()
+    labelled_roof = cropped_roof.copy()
 
     if obstacle_coordinates is None:
-        return target_image
+        return labelled_roof
 
-    coord = parse_str_as_coordinates(
+    roof_coords = parse_str_as_coordinates(
         roof_coordinates, dtype="int32", sort_coordinates=True
     )
 
     # rectangular roof
-    if len(coord) == 4:
-        rotation_matrix = _compute_rotation_matrix(coord)
-        center = coord[0]
+    if len(roof_coords) == 4:
+        rotation_matrix = _compute_rotation_matrix(roof_coords)
+        center = roof_coords[0]
 
         for obst in obstacle_coordinates:
             points_obs: np.array = parse_str_as_coordinates(obst)
-            obst_vertex = len(points_obs)
-            pts1 = np.hstack((points_obs, np.ones((obst_vertex, 1))))
-            pts_rotated = np.matmul(rotation_matrix, np.transpose(pts1))
-            offset = np.transpose(np.tile(center, (obst_vertex, 1)))
-            pts_new = np.subtract(pts_rotated, offset).astype(int)
 
+            obst_vertex = len(points_obs)
+
+            pts1 = np.hstack((points_obs, np.ones((obst_vertex, 1))))
+
+            pts_rotated = np.matmul(rotation_matrix, np.transpose(pts1))
+
+            offset = np.transpose(np.tile(center, (obst_vertex, 1)))
+
+            pts_new = np.subtract(pts_rotated, offset).astype(int)
             pts_new = np.transpose(pts_new)
+
             cv.polylines(
-                target_image, [pts_new], True, (255, 0, 0, 255), 1, lineType=cv.LINE_4
+                labelled_roof, [pts_new], True, (255, 0, 0, 255), 1, lineType=cv.LINE_4
             )
 
     # polygonal roof
@@ -192,14 +200,16 @@ def draw_labels_on_cropped_roof(
         for obst in obstacle_coordinates:
             points: np.array = parse_str_as_coordinates(obst).reshape((-1, 1, 2))
 
-            top_left = np.min(coord, axis=0)
+            top_left = np.min(roof_coords, axis=0)
+
             points_list = []
             for pts in points:
                 points_list.append(np.subtract(pts, top_left))
 
             points_offset = np.array(points_list).reshape((-1, 1, 2))
+
             cv.polylines(
-                target_image,
+                labelled_roof,
                 [points_offset],
                 True,
                 (255, 0, 0, 255),
@@ -207,7 +217,74 @@ def draw_labels_on_cropped_roof(
                 lineType=cv.LINE_4,
             )
 
-    return target_image
+    return labelled_roof
+
+
+def draw_obstacles_on_black_fill(
+    cropped_roof: ndarray,
+    roof_coordinates: str,
+    obstacle_coordinates: str,
+) -> ndarray:
+    """Draws roof and obstacle labels on the input image from their coordinates.
+
+    Parameters
+    ----------
+    cropped_roof : ndarray
+        Input image.
+    roof_coordinates : str or ndarray
+        Roof coordinates, either as string or list of lists of integers.
+    obstacle_coordinates : str or ndarray or None (default: None)
+        Obstacle coordinates. Can be None if there are no obstacles. Defaults to None.
+
+    Returns
+    -------
+    ndarray
+        A black mask with the labels drawn
+    """
+
+    black_background = np.zeros(cropped_roof.shape, np.uint8)
+
+    roof_coords = parse_str_as_coordinates(
+        roof_coordinates, dtype="int32", sort_coordinates=True
+    )
+
+    # rectangular roof
+    if len(roof_coords) == 4:
+        rotation_matrix = _compute_rotation_matrix(roof_coords)
+        center = roof_coords[0]
+
+        for obst in obstacle_coordinates:
+            points_obs: np.array = parse_str_as_coordinates(obst)
+
+            obst_vertex = len(points_obs)
+
+            pts1 = np.hstack((points_obs, np.ones((obst_vertex, 1))))
+
+            pts_rotated = np.matmul(rotation_matrix, np.transpose(pts1))
+
+            offset = np.transpose(np.tile(center, (obst_vertex, 1)))
+
+            pts_new = np.subtract(pts_rotated, offset).astype(int)
+            pts_new = np.transpose(pts_new)
+
+            cv.fillConvexPoly(black_background, pts_new, (255, 255, 255, 255), 1)
+
+    # polygonal roof
+    else:
+        for obst in obstacle_coordinates:
+            points: np.array = parse_str_as_coordinates(obst).reshape((-1, 1, 2))
+
+            top_left = np.min(roof_coords, axis=0)
+
+            points_list = []
+            for pts in points:
+                points_list.append(np.subtract(pts, top_left))
+
+            points_offset = np.array(points_list).reshape((-1, 1, 2))
+
+            cv.fillConvexPoly(black_background, points_offset, (255, 255, 255, 255), 1)
+
+    return black_background
 
 
 def _compute_rotation_matrix(coordinates):
@@ -238,56 +315,58 @@ def rotate_and_crop_roof(input_image: ndarray, roof_coordinates: str) -> ndarray
         The rotated and cropped roof.
     """
     # dont'change dtype
-    coord = parse_str_as_coordinates(
+    roof_coords = parse_str_as_coordinates(
         roof_coordinates, dtype="int32", sort_coordinates=True
     )
 
     if len(input_image.shape) < 3:
-        im_alpha = cv.cvtColor(input_image, cv.COLOR_GRAY2BGRA)
+        image_bgra = cv.cvtColor(input_image, cv.COLOR_GRAY2BGRA)
     else:
-        im_alpha = cv.cvtColor(input_image, cv.COLOR_BGR2BGRA)
+        image_bgra = cv.cvtColor(input_image, cv.COLOR_BGR2BGRA)
 
     # rectangular roofs
-    if len(coord) == 4:
-        rotation_matrix = _compute_rotation_matrix(coord)
+    if len(roof_coords) == 4:
+        rotation_matrix = _compute_rotation_matrix(roof_coords)
 
-        im_affine = cv.warpAffine(
-            im_alpha,
+        rotated_image = cv.warpAffine(
+            image_bgra,
             rotation_matrix,
-            (im_alpha.shape[0] * 2, im_alpha.shape[1] * 2),
+            (image_bgra.shape[0] * 2, image_bgra.shape[1] * 2),
             cv.INTER_LINEAR,
             cv.BORDER_CONSTANT,
         )
 
-        diff = np.subtract(coord[1], coord[0])
+        diff = np.subtract(roof_coords[1], roof_coords[0])
 
         if diff[1] > 0:
-            dist_y = np.linalg.norm(coord[1] - coord[0]).astype(int)
-            dist_x = np.linalg.norm(coord[2] - coord[0]).astype(int)
+            dist_y = np.linalg.norm(roof_coords[1] - roof_coords[0]).astype(int)
+            dist_x = np.linalg.norm(roof_coords[2] - roof_coords[0]).astype(int)
         else:
-            dist_y = np.linalg.norm(coord[2] - coord[0]).astype(int)
-            dist_x = np.linalg.norm(coord[1] - coord[0]).astype(int)
+            dist_y = np.linalg.norm(roof_coords[2] - roof_coords[0]).astype(int)
+            dist_x = np.linalg.norm(roof_coords[1] - roof_coords[0]).astype(int)
 
-        return im_affine[
-            coord[0][1] : coord[0][1] + dist_y, coord[0][0] : coord[0][0] + dist_x, :
+        return rotated_image[
+            roof_coords[0][1] : roof_coords[0][1] + dist_y,
+            roof_coords[0][0] : roof_coords[0][0] + dist_x,
+            :,
         ]
 
     # polygonal roofs
     else:
-        coord = parse_str_as_coordinates(
+        roof_coords = parse_str_as_coordinates(
             roof_coordinates, dtype="int32", sort_coordinates=False
         )
         mask = np.zeros(input_image.shape[0:2], dtype="uint8")
 
-        pts = np.array(coord, np.int32).reshape((-1, 1, 2))
+        pts = np.array(roof_coords, np.int32).reshape((-1, 1, 2))
 
         cv.fillConvexPoly(mask, pts, (255, 255, 255))
 
-        im_alpha[:, :, 3] = mask
+        image_bgra[:, :, 3] = mask
 
         bot_right = np.max(pts, axis=0)
         top_left = np.min(pts, axis=0)
 
-        return im_alpha[
+        return image_bgra[
             top_left[0][1] : bot_right[0][1], top_left[0][0] : bot_right[0][0], :
         ]
