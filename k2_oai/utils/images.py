@@ -15,6 +15,7 @@ from k2_oai.utils._parsers import parse_str_as_coordinates
 __all__ = [
     "read_image_from_bytestring",
     "pad_image",
+    "downsample_image",
     "draw_labels_on_cropped_roof",
     "draw_labels_on_photo",
     "rotate_and_crop_roof",
@@ -82,6 +83,24 @@ def pad_image(
     ]
 
     return padded_image, (margin_h, margin_w)
+
+
+def downsample_image(image, downsampling_factor):
+    new_shape = np.divide(image.shape, downsampling_factor).astype(int)
+    output_image = np.zeros(new_shape, dtype="uint8")
+
+    for i in range(output_image.shape[0]):
+        for j in range(output_image.shape[1]):
+            output_image[i, j] = 255 * np.any(
+                image[
+                    i * downsampling_factor : i * downsampling_factor
+                    + downsampling_factor,
+                    j * downsampling_factor : j * downsampling_factor
+                    + downsampling_factor,
+                ]
+            )
+
+    return output_image
 
 
 def draw_labels_on_photo(
