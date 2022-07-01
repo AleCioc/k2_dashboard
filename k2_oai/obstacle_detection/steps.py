@@ -20,17 +20,15 @@ import cv2 as cv
 import numpy as np
 from numpy import ndarray
 
-from k2_oai.utils import is_positive_odd_integer, is_valid_method, pad_image
+from k2_oai.utils import is_positive_odd_integer, is_valid_method
+from k2_oai.utils.images import pad_image
 
 __all__: list[str] = [
-    # "BoundingBox",
     "filtering_step",
     "binarization_step",
     "morphological_opening_step",
     "detect_obstacles",
 ]
-
-BoundingBox = tuple[tuple[int, int], tuple[int, int]]
 
 
 def filtering_step(input_image: ndarray, sigma: int, method: str = "b") -> ndarray:
