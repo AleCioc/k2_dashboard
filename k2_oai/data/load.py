@@ -10,7 +10,7 @@ import pandas as pd
 
 from k2_oai import dropbox as dbx
 from k2_oai.dropbox import DROPBOX_LABEL_ANNOTATIONS_PATH, DROPBOX_PHOTOS_METADATA_PATH
-from k2_oai.utils import draw_labels_on_photo, rotate_and_crop_roof
+from k2_oai.utils.images import draw_labels_on_photo, rotate_and_crop_roof
 
 __all__ = [
     "dbx_load_dataframe",

@@ -11,7 +11,7 @@ import streamlit as st
 from k2_oai import dropbox as dbx
 from k2_oai.data import load
 from k2_oai.dropbox import DROPBOX_RAW_PHOTOS_ROOT
-from k2_oai.utils import (
+from k2_oai.utils.images import (
     draw_labels_on_cropped_roof,
     draw_labels_on_photo,
     rotate_and_crop_roof,
