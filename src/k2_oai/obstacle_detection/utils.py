@@ -241,6 +241,7 @@ def get_bounding_boxes(
         raise ValueError("`source_image` cannot be None when `draw_obstacles` is True")
     elif draw_obstacles:
         labelled_image = source_image.copy()
+        labelled_image = cv.cvtColor(labelled_image, cv.COLOR_BGRA2BGR)
 
     for i in range(1, blob_stats.shape[0]):
 
@@ -270,8 +271,8 @@ def get_bounding_boxes(
 def get_bounding_polygon(
     blobs_stats: ndarray,
     blobs: ndarray,
-    source_image: ndarray | None,
     min_area: int = 0,
+    source_image: ndarray | None = None,
     draw_obstacles: bool = False,
 ):
     """Obtain polygons delimiting obstacles, from blobs resulting from the connected
@@ -296,6 +297,7 @@ def get_bounding_polygon(
         raise ValueError("`source_image` cannot be None when `draw_obstacles` is True")
     elif draw_obstacles:
         labelled_image = source_image.copy()
+        labelled_image = cv.cvtColor(labelled_image, cv.COLOR_BGRA2BGR)
 
     for i in range(1, blobs_stats.shape[0]):
         if blobs_stats[i, cv.CC_STAT_AREA] > min_area:
