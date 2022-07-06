@@ -6,13 +6,13 @@ from numpy import ndarray
 
 
 def compute_otsu_threshold(
-    input_image: ndarray, zeros_in_mask: int | None = None, histogram_bins: int = 256
-):
+    source_image: ndarray, zeros_in_mask: int | None = None, histogram_bins: int = 256
+) -> tuple[int, float]:
     """Computes the threshold for filtering using the OTSU method
 
     Parameters
     ----------
-    input_image: ndarray
+    source_image: ndarray
     zeros_in_mask: int or None (default: None)
         The number of elements equal to zero in the image_mask. If not provided, is
         computed automatically.
@@ -24,10 +24,10 @@ def compute_otsu_threshold(
     """
 
     if zeros_in_mask is None:
-        zeros_in_mask = np.sum(input_image[:, :, 3] == 0)
+        zeros_in_mask = np.sum(source_image[:, :, 3] == 0)
 
     greyscale_histogram = cv.calcHist(
-        [input_image], [0], None, [histogram_bins], [0, 256]
+        [source_image], [0], None, [histogram_bins], [0, 256]
     )
 
     greyscale_histogram[0] = greyscale_histogram[0] - zeros_in_mask
@@ -58,17 +58,17 @@ def compute_otsu_threshold(
 
 
 def compute_composite_threshold(
-    input_image: ndarray,
+    source_image: ndarray,
     image_mask: ndarray | None = None,
     zeros_in_mask: int | None = None,
     histogram_bins: int = 64,
     infer_tolerance: bool = True,
-):
+) -> int | tuple[int, int]:
     """Infers the threshold for composite binarization.
 
     Parameters
     ----------
-    input_image
+    source_image
     image_mask: ndarray or None (default: None)
         The number of elements equal to zero in the image_mask. If not provided, is
         computed automatically.
@@ -85,13 +85,13 @@ def compute_composite_threshold(
     """
 
     if image_mask is None:
-        image_mask = cv.bitwise_and(input_image[:, :, 0], input_image[:, :, 3])
+        image_mask = cv.bitwise_and(source_image[:, :, 0], source_image[:, :, 3])
 
     if zeros_in_mask is None:
-        zeros_in_mask = np.sum(input_image[:, :, 3] == 0)
+        zeros_in_mask = np.sum(source_image[:, :, 3] == 0)
 
     greyscale_histogram = cv.calcHist(
-        [input_image], [0], None, [histogram_bins], [0, 256], accumulate=False
+        [source_image], [0], None, [histogram_bins], [0, 256], accumulate=False
     )
 
     greyscale_histogram[0] = greyscale_histogram[0] - zeros_in_mask
@@ -143,7 +143,7 @@ def compute_composite_tolerance(
 
 
 def make_light_and_dark_thresh_images(
-    input_image: ndarray,
+    source_image: ndarray,
     binarization_histogram_bins: int,
     binarization_tolerance: int,
     image_mask: ndarray | None = None,
@@ -153,7 +153,7 @@ def make_light_and_dark_thresh_images(
 
     Parameters
     ----------
-    input_image: ndarray
+    source_image: ndarray
     binarization_histogram_bins: int
     binarization_tolerance: int
     image_mask: ndarray or None (default: None)
@@ -169,16 +169,16 @@ def make_light_and_dark_thresh_images(
     """
 
     if image_mask is None:
-        image_mask = cv.bitwise_and(input_image[:, :, 0], input_image[:, :, 3])
+        image_mask = cv.bitwise_and(source_image[:, :, 0], source_image[:, :, 3])
 
     if zeros_in_mask is None:
-        zeros_in_mask = np.sum(input_image[:, :, 3] == 0)
+        zeros_in_mask = np.sum(source_image[:, :, 3] == 0)
 
     if binarization_tolerance not in range(-1, 256):
         raise ValueError("Tolerance must be in the range [-1, 255].")
     elif binarization_tolerance == -1:
         binarization_threshold, binarization_tolerance = compute_composite_threshold(
-            input_image=input_image,
+            source_image=source_image,
             image_mask=image_mask,
             zeros_in_mask=zeros_in_mask,
             histogram_bins=binarization_histogram_bins,
@@ -186,7 +186,7 @@ def make_light_and_dark_thresh_images(
         )
     else:
         binarization_threshold = compute_composite_threshold(
-            input_image=input_image,
+            source_image=source_image,
             image_mask=image_mask,
             zeros_in_mask=zeros_in_mask,
             histogram_bins=binarization_histogram_bins,
@@ -228,12 +228,12 @@ def get_bounding_boxes(
 
     if draw_obstacles and source_image is None:
         raise ValueError("`source_image` cannot be None when `draw_obstacles` is True")
-    if draw_obstacles:
+    elif draw_obstacles:
         labelled_image = source_image.copy()
 
     for i in range(1, blob_stats.shape[0]):
 
-        # TODO: evaluate to return the full set of coordinates
+        # TODO: rewrite so it returns the full set of coordinates
         if blob_stats[i, cv.CC_STAT_AREA] > min_area:
             top_left_px = (
                 blob_stats[i, cv.CC_STAT_LEFT] + margins[1],  # height
@@ -283,7 +283,7 @@ def get_bounding_polygon(
 
     if draw_obstacles and source_image is None:
         raise ValueError("`source_image` cannot be None when `draw_obstacles` is True")
-    if draw_obstacles:
+    elif draw_obstacles:
         labelled_image = source_image.copy()
 
     for i in range(1, blobs_stats.shape[0]):
