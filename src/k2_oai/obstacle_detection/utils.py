@@ -4,6 +4,15 @@ import cv2 as cv
 import numpy as np
 from numpy import ndarray
 
+__all__ = [
+    "compute_otsu_threshold",
+    "compute_composite_threshold",
+    "compute_composite_tolerance",
+    "make_light_and_dark_thresh_images",
+    "get_bounding_boxes",
+    "get_bounding_polygon",
+]
+
 
 def compute_otsu_threshold(
     source_image: ndarray, zeros_in_mask: int | None = None, histogram_bins: int = 256
