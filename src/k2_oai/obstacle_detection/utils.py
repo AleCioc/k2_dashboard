@@ -21,11 +21,11 @@ def compute_otsu_threshold(
 
     Parameters
     ----------
-    source_image: ndarray
-    zeros_in_mask: int or None (default: None)
+    source_image : ndarray
+    zeros_in_mask : int or None (default: None)
         The number of elements equal to zero in the image_mask. If not provided, is
         computed automatically.
-    histogram_bins: int (default: 256)
+    histogram_bins : int (default: 256)
 
     Returns
     -------
@@ -77,15 +77,15 @@ def compute_composite_threshold(
 
     Parameters
     ----------
-    source_image
-    image_mask: ndarray or None (default: None)
+    source_image : ndarray
+    image_mask : ndarray or None (default: None)
         The number of elements equal to zero in the image_mask. If not provided, is
         computed automatically.
-    zeros_in_mask: int or None (default: None)
+    zeros_in_mask : int or None (default: None)
         The number of elements equal to zero in the image_mask. If not provided, is
         computed automatically.
-    histogram_bins: int (default: 64)
-    infer_tolerance: bool (default: True)
+    histogram_bins : int (default: 64)
+    infer_tolerance : bool (default: True)
 
     Returns
     -------
@@ -125,9 +125,9 @@ def compute_composite_tolerance(
 
     Parameters
     ----------
-    image_mask: ndarray
-    greyscale_histogram: ndarray
-    histogram_bins: int
+    image_mask : ndarray
+    greyscale_histogram : ndarray
+    histogram_bins : int
 
     Returns
     -------
@@ -162,13 +162,13 @@ def make_light_and_dark_thresh_images(
 
     Parameters
     ----------
-    source_image: ndarray
-    binarization_histogram_bins: int
-    binarization_tolerance: int
-    image_mask: ndarray or None (default: None)
+    source_image : ndarray
+    binarization_histogram_bins : int
+    binarization_tolerance : int
+    image_mask : ndarray or None (default: None)
         The number of elements equal to zero in the image_mask. If not provided, is
         computed automatically.
-    zeros_in_mask: int or None (default: None)
+    zeros_in_mask : int or None (default: None)
         The number of elements equal to zero in the image_mask. If not provided, is
         computed automatically.
 
@@ -220,18 +220,20 @@ def make_light_and_dark_thresh_images(
 
 
 def get_bounding_boxes(
-    source_image, blob_stats, margins, min_area: int = 0, draw_obstacles=True
+    blob_stats: ndarray,
+    min_area: int = 0,
+    source_image: ndarray | None = None,
+    draw_obstacles: bool = False,
 ):
     """Obtain bounding boxes from blobs resulting from the connected components'
     analysis. Then, draw them on the input image.
 
     Parameters
     ----------
-    source_image
-    blob_stats
-    margins
-    min_area
-    draw_obstacles
+    blob_stats : ndarray
+    min_area : int, default: 0
+    source_image : ndarray or None, default: None
+    draw_obstacles : bool, default: False
     """
     bounding_box_coordinates = []
 
@@ -245,8 +247,8 @@ def get_bounding_boxes(
         # TODO: rewrite so it returns the full set of coordinates
         if blob_stats[i, cv.CC_STAT_AREA] > min_area:
             top_left_px = (
-                blob_stats[i, cv.CC_STAT_LEFT] + margins[1],  # height
-                blob_stats[i, cv.CC_STAT_TOP] + margins[0],  # width
+                blob_stats[i, cv.CC_STAT_LEFT],
+                blob_stats[i, cv.CC_STAT_TOP],
             )
             height = blob_stats[i, cv.CC_STAT_HEIGHT]
             width = blob_stats[i, cv.CC_STAT_WIDTH]
@@ -266,22 +268,22 @@ def get_bounding_boxes(
 
 
 def get_bounding_polygon(
-    blobs_stats,
-    blobs,
+    blobs_stats: ndarray,
+    blobs: ndarray,
     source_image: ndarray | None,
     min_area: int = 0,
-    draw_obstacles: bool = True,
+    draw_obstacles: bool = False,
 ):
     """Obtain polygons delimiting obstacles, from blobs resulting from the connected
     components' analysis. Then, draw them on the input image.
 
     Parameters
     ----------
-    source_image
-    blobs_stats
-    blobs
-    min_area
-    draw_obstacles
+    blobs_stats : ndarray
+    blobs : ndarray
+    min_area : int, default: 0
+    source_image : ndarray or None, default: None
+    draw_obstacles : bool, default: False
 
     Returns
     -------
