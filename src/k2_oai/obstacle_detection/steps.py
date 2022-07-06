@@ -196,7 +196,7 @@ def image_erosion(source_image: ndarray, kernel_size: int | None = None) -> ndar
 
 
 def detect_obstacles(
-    blurred_roof: ndarray,
+    processed_roof: ndarray,
     box_or_polygon: str = "box",
     min_area: int = -1,
     source_image: ndarray = None,
@@ -209,7 +209,7 @@ def detect_obstacles(
 
     Parameters
     ----------
-    blurred_roof : ndarray
+    processed_roof : ndarray
         Input image.
     box_or_polygon : {"box", "polygon"}, default: 'box'
         String indicating whether to using bounding boxes or bounding polygon.
@@ -234,14 +234,14 @@ def detect_obstacles(
     """
 
     if min_area == -1:
-        min_area: int = int(np.max(blurred_roof.shape) / 20)
+        min_area: int = int(np.max(processed_roof.shape) / 20)
     elif min_area < -1:
         raise ValueError("`min_area` must be greater than -1.")
 
     is_valid_method(box_or_polygon, ["box", "polygon"])
 
     _, obstacles_blobs, blobs_stats, blobs_centroids = cv.connectedComponentsWithStats(
-        blurred_roof, connectivity=8
+        processed_roof, connectivity=8
     )
 
     if draw_obstacles and source_image is None:
