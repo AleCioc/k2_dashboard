@@ -7,6 +7,7 @@ import streamlit as st
 
 from k2_oai.dashboard import utils
 from k2_oai.dashboard.components import buttons, sidebar
+from k2_oai.obstacle_detection import pipelines
 
 __all__ = ["obstacle_detection_page"]
 
@@ -58,62 +59,62 @@ def obstacle_detection_page(
             f"{all_annotations.shape[0]}"
         )
 
-        chosen_sigma = st.slider(
-            "Filtering sigma (positive, odd integer):",
-            min_value=1,
-            step=2,
-        )
-
         chosen_filtering_method = st.radio(
             "Choose filtering method:",
             options=("Bilateral", "Gaussian"),
         )
 
-        chosen_binarisation_method = st.radio(
-            "Select the desired binarisation method",
-            options=("Simple", "Adaptive", "Composite"),
+        chosen_filtering_sigma = st.slider(
+            "Filtering sigma (positive, odd integer):",
+            min_value=-1,
+            step=2,
         )
 
-        if chosen_binarisation_method == "Adaptive":
-            chosen_blocksize = st.slider(
-                """
-                Size of the pixel neighbourhood.
-                If -1, it will be deduced from the image's size
-                """,
-                min_value=-1,
-                max_value=255,
-                step=2,
-            )
-            chosen_tolerance = None
-        elif chosen_binarisation_method == "Composite":
-            chosen_tolerance = st.slider(
-                """
-                Tolerance for the composite binarisation method.
-                If -1, tolerance will be deduced from the histogram's variance
-                """,
-                min_value=-1,
-                max_value=255,
-            )
-            chosen_blocksize = None
-        else:
-            chosen_blocksize, chosen_tolerance = None, None
+        chosen_binarisation_method = st.radio(
+            "Select the desired binarisation method:",
+            options=("Simple", "Composite"),
+        )
 
-        boundary_type = st.radio(
+        if chosen_binarisation_method == "Composite":
+            chosen_binarisation_tolerance = st.slider(
+                "Tolerance for the composite binarisation method. ",
+                "If -1, tolerance will be deduced from the histogram's variance",
+                min_value=-1,
+                max_value=255,
+            )
+        else:
+            chosen_binarisation_tolerance = None
+
+        chosen_erosion_kernel = st.slider(
+            "Kernel shape for morphological opening/erosion. "
+            "If -1, it will be inferred",
+            min_value=-1,
+            max_value=100,
+        )
+
+        chosen_min_area = st.slider(
+            "Minimum obstacles area, in pixels",
+            min_value=0,
+            max_value=100,
+        )
+
+        chosen_boundary_type = st.radio(
             "Select the desired drawing technique",
             options=("Bounding Box", "Bounding Polygon"),
         )
 
-        annotations = {
-            "sigma": chosen_sigma,
+        roof_annotations = {
+            "filtering_sigma": chosen_filtering_sigma,
             "filtering_method": chosen_filtering_method,
             "binarization_method": chosen_binarisation_method,
-            "blocksize": chosen_blocksize,
-            "tolerance": chosen_tolerance,
-            "boundary_type": boundary_type,
+            "binarization_tolerance": chosen_binarisation_tolerance,
+            "erosion_kernel_size": chosen_erosion_kernel,
+            "obstacles_min_area": chosen_min_area,
+            "boundary_type": chosen_boundary_type,
         }
 
         sidebar.write_and_save_annotations(
-            new_annotations=annotations,
+            new_annotations=roof_annotations,
             annotations_data=all_annotations,
             annotations_savefile=st.session_state[key_annotations_file],
             roof_id=chosen_roof_id,
@@ -127,24 +128,34 @@ def obstacle_detection_page(
     # | Roof & Color Histograms |
     # +-------------------------+
 
-    photo, roof, labelled_photo, _labelled_roof = utils.st_load_photo_and_roof(
+    (
+        satellite_photo,
+        labelled_photo,
+        cropped_roof,
+        k2_labelled_roof,
+    ) = utils.st_load_photo_and_roof(
         int(chosen_roof_id), obstacles_metadata, chosen_folder
     )
 
+    roof_coordinates, obstacles_coordinates = utils.get_coordinates_from_roof_id(
+        int(chosen_roof_id), obstacles_metadata
+    )
+
     (
-        obstacle_blobs,
-        roof_with_bboxes,
         obstacles_coordinates,
-        filtered_gs_roof,
-    ) = utils.obstacle_detection_pipeline(
-        roof=roof,
-        sigma=chosen_sigma,
+        labelled_roof,
+        obstacle_blobs,
+    ) = pipelines.manual_obstacle_detection_pipeline(
+        satellite_image=satellite_photo,
+        roof_px_coordinates=roof_coordinates,
         filtering_method=chosen_filtering_method,
+        filtering_sigma=chosen_filtering_sigma,
         binarization_method=chosen_binarisation_method,
-        blocksize=chosen_blocksize,
-        tolerance=chosen_tolerance,
-        boundary_type=boundary_type,
-        return_filtered_roof=True,
+        binarization_tolerance=chosen_binarisation_tolerance,
+        erosion_kernel_size=chosen_erosion_kernel,
+        obstacle_minimum_area=chosen_min_area,
+        obstacle_boundary_type=chosen_boundary_type,
+        using_dashboard=True,
     )
 
     if chosen_roof_id in all_annotations.roof_id.values:
@@ -155,7 +166,7 @@ def obstacle_detection_page(
     st_roof, st_labelled_roof = st.columns((1, 1))
 
     st_roof.image(
-        photo,
+        satellite_photo,
         use_column_width=True,
         channels="BGRA",
         caption="Satellite photo",
@@ -174,31 +185,25 @@ def obstacle_detection_page(
 
     st.subheader("Obstacle Detection Steps, Visualized")
 
-    st_results_widgets = st.columns((1, 1))
+    st_results_widgets = st.columns(3)
 
     st_results_widgets[0].image(
-        roof,
+        cropped_roof,
         use_column_width=True,
         channels="BGRA",
         caption="Cropped Roof (RGB) with Database Labels",
     )
 
-    st_results_widgets[0].image(
-        filtered_gs_roof,
-        use_column_width=True,
-        caption="Cropped Roof (Greyscale) After Filtering",
-    )
-
     st_results_widgets[1].image(
         (obstacle_blobs * 60) % 256,
         use_column_width=True,
-        caption="Auto Obstacle Blobs (Greyscale)",
+        caption="Obstacle Blobs (Greyscale)",
     )
 
-    st_results_widgets[1].image(
-        roof_with_bboxes,
+    st_results_widgets[2].image(
+        labelled_roof,
         use_column_width=True,
-        caption=f"Auto Labelled {boundary_type}",
+        caption=f"Auto Labelled {chosen_boundary_type}",
     )
 
     with st.expander("View the annotations:", expanded=True):
