@@ -8,7 +8,7 @@ __all__ = [
     "compute_otsu_threshold",
     "compute_composite_threshold",
     "compute_composite_tolerance",
-    "make_light_and_dark_thresh_images",
+    "light_and_dark_thresholding",
     "get_bounding_boxes",
     "get_bounding_polygon",
 ]
@@ -151,7 +151,7 @@ def compute_composite_tolerance(
     return tolerance
 
 
-def make_light_and_dark_thresh_images(
+def light_and_dark_thresholding(
     source_image: ndarray,
     binarization_histogram_bins: int,
     binarization_tolerance: int,

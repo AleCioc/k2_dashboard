@@ -24,7 +24,7 @@ from k2_oai.obstacle_detection.utils import (
     compute_otsu_threshold,
     get_bounding_boxes,
     get_bounding_polygon,
-    make_light_and_dark_thresh_images,
+    light_and_dark_thresholding,
 )
 from k2_oai.utils import is_positive_odd_integer, is_valid_method
 
@@ -38,13 +38,13 @@ __all__: list[str] = [
 
 
 def image_filtering(
-    source_image: ndarray, filtering_method: str, filtering_sigma: int
+    roof_image: ndarray, filtering_method: str, filtering_sigma: int
 ) -> ndarray:
     """Applies a filter on the input image, which can be either greyscale, BGR or BGRA.
 
     Parameters
     ----------
-    source_image : ndarray
+    roof_image : ndarray
         The image that the filter will be applied to. Is a greyscale image.
     filtering_method : { "g", "gaussian", "b", "bilateral" }
         The method used to apply the filter. It must be either 'bilateral' (or 'b')
@@ -66,7 +66,7 @@ def image_filtering(
     if filtering_sigma < -1 or filtering_sigma == 0 or filtering_sigma % 2 == 0:
         raise ValueError("`filtering_sigma` must be -1 or a positive odd integer")
     if filtering_sigma == -1:
-        sigma_x, sigma_y = np.floor(np.divide(source_image.shape, 30)).astype(int)
+        sigma_x, sigma_y = np.floor(np.divide(roof_image.shape, 30)).astype(int)
         if sigma_x % 2 == 0:
             sigma_x += 1
 
@@ -77,29 +77,29 @@ def image_filtering(
 
     if filtering_method == "b" or filtering_method == "bilateral":
 
-        if len(source_image.shape) > 2:
-            if source_image.shape[2] > 3:  # bgra image
-                image_to_bgr = cv.cvtColor(source_image, cv.COLOR_BGRA2BGR)
-                source_image[:, :, 0:3] = bilateral_filter(image_to_bgr, sigma_x)
-                return source_image
-            elif source_image.shape[2] <= 3:  # bgr image
-                filtered_image = bilateral_filter(source_image, sigma_x)
+        if len(roof_image.shape) > 2:
+            if roof_image.shape[2] > 3:  # bgra image
+                image_to_bgr = cv.cvtColor(roof_image, cv.COLOR_BGRA2BGR)
+                roof_image[:, :, 0:3] = bilateral_filter(image_to_bgr, sigma_x)
+                return roof_image
+            elif roof_image.shape[2] <= 3:  # bgr image
+                filtered_image = bilateral_filter(roof_image, sigma_x)
                 return cv.cvtColor(filtered_image, cv.COLOR_BGR2BGRA)
 
         # grayscale image
-        filtered_image = bilateral_filter(source_image, sigma_x)
+        filtered_image = bilateral_filter(roof_image, sigma_x)
         return cv.cvtColor(filtered_image, cv.COLOR_GRAY2BGRA)
 
     else:
-        return cv.GaussianBlur(source_image, (sigma_x, sigma_y), 0)
+        return cv.GaussianBlur(roof_image, (sigma_x, sigma_y), 0)
 
 
-def image_simple_binarization(source_image: ndarray) -> ndarray:
+def image_simple_binarization(roof_image: ndarray) -> ndarray:
     """Binarizes the image using the Otsu method.
 
     Parameters
     ----------
-    source_image : ndarray
+    roof_image : ndarray
         A BGRA image.
 
     Return
@@ -108,23 +108,23 @@ def image_simple_binarization(source_image: ndarray) -> ndarray:
         The thresholded image.
     """
 
-    zeros_in_mask = int(np.sum(source_image[:, :, 3] == 0))
+    zeros_in_mask = int(np.sum(roof_image[:, :, 3] == 0))
 
-    otsu_threshold, _ = compute_otsu_threshold(source_image, zeros_in_mask)
+    otsu_threshold, _ = compute_otsu_threshold(roof_image, zeros_in_mask)
 
     _threshold, binarized_image = cv.threshold(
-        source_image, otsu_threshold, 255, cv.THRESH_BINARY
+        roof_image, otsu_threshold, 255, cv.THRESH_BINARY
     )
 
     if np.sum(binarized_image == 255) > np.sum(binarized_image == 0) - zeros_in_mask:
         binarized_image = cv.bitwise_not(binarized_image)
-        binarized_image = cv.bitwise_and(binarized_image, source_image[:, :, 3])
+        binarized_image = cv.bitwise_and(binarized_image, roof_image[:, :, 3])
 
     return binarized_image
 
 
 def image_composite_binarization(
-    source_image: ndarray, histogram_bins: int = 64, threshold_tolerance: int = -1
+    roof_image: ndarray, histogram_bins: int = 64, threshold_tolerance: int = -1
 ) -> ndarray:
     """Binarizes an image using the "composite" method. The procedure takes the image
     and applies simple binarization twice: the first time with threshold -= tolerance to
@@ -133,7 +133,7 @@ def image_composite_binarization(
 
     Parameters
     ----------
-    source_image : ndarray
+    roof_image : ndarray
     histogram_bins : int
     threshold_tolerance : int
 
@@ -143,32 +143,32 @@ def image_composite_binarization(
         The thresholded image
 
     """
-    zeros_in_mask = int(np.sum(source_image[:, :, 3] == 0))
+    zeros_in_mask = int(np.sum(roof_image[:, :, 3] == 0))
 
-    light_thresholded_image, dark_thresholded_image = make_light_and_dark_thresh_images(
-        source_image=source_image,
+    light_thresholded_image, dark_thresholded_image = light_and_dark_thresholding(
+        source_image=roof_image,
         binarization_histogram_bins=histogram_bins,
         binarization_tolerance=threshold_tolerance,
         zeros_in_mask=zeros_in_mask,
     )
 
     binarized_image = cv.bitwise_or(light_thresholded_image, dark_thresholded_image)
-    binarized_image = cv.bitwise_and(binarized_image[:, :, 0], source_image[:, :, 3])
+    binarized_image = cv.bitwise_and(binarized_image[:, :, 0], roof_image[:, :, 3])
 
     if np.sum(binarized_image == 255) > np.sum(binarized_image == 0) - zeros_in_mask:
         binarized_image = cv.bitwise_not(binarized_image)
-        binarized_image = cv.bitwise_and(binarized_image, source_image[:, :, 3])
+        binarized_image = cv.bitwise_and(binarized_image, roof_image[:, :, 3])
 
     return binarized_image
 
 
-def image_erosion(source_image: ndarray, kernel_size: int | None = None) -> ndarray:
+def image_erosion(roof_image: ndarray, kernel_size: int | None = None) -> ndarray:
     """Applies an opening[1] (i.e., erosion followed by dilation) on the input image,
     to remove noise.
 
     Parameters
     ----------
-    source_image : ndarray
+    roof_image : ndarray
         The input image to which the opening will be applied.
     kernel_size : int or None (default: None)
         Size of the kernel used for the morphological opening.
@@ -186,12 +186,12 @@ def image_erosion(source_image: ndarray, kernel_size: int | None = None) -> ndar
         https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html
     """
     if kernel_size is None:
-        kernel_size: int = 1 if source_image.size < 10_000 else 3
+        kernel_size: int = 1 if roof_image.size < 10_000 else 3
     else:
         is_positive_odd_integer(kernel_size)
 
     kernel: ndarray = np.ones((kernel_size, kernel_size), np.uint8)
-    image_open_morphology = cv.morphologyEx(source_image, cv.MORPH_OPEN, kernel)
+    image_open_morphology = cv.morphologyEx(roof_image, cv.MORPH_OPEN, kernel)
     return cv.morphologyEx(image_open_morphology, cv.MORPH_CLOSE, kernel)
 
 

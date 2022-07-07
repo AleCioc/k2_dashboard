@@ -105,15 +105,13 @@ def downsample_image(image, downsampling_factor):
 
 
 def draw_roofs_and_obstacles_on_photo(
-    photo: ndarray,
-    roof_coordinates: str,
-    obstacle_coordinates: str | None,
+    satellite_image: ndarray, roof_coordinates: str, obstacle_coordinates: str | None
 ):
     """Draws roof and obstacle labels on the input image from their coordinates.
 
     Parameters
     ----------
-    photo : ndarray
+    satellite_image : ndarray
         Input image.
     roof_coordinates : str or ndarray
         Roof coordinates, either as string or list of lists of integers.
@@ -125,7 +123,7 @@ def draw_roofs_and_obstacles_on_photo(
     ndarray
         Image with labels drawn.
     """
-    photo_copy = photo.copy()
+    photo_copy = satellite_image.copy()
 
     points: ndarray = parse_str_as_coordinates(roof_coordinates).reshape((-1, 1, 2))
     labelled_image: ndarray = cv.polylines(photo_copy, [points], True, (0, 0, 255), 2)
@@ -297,13 +295,13 @@ def _compute_rotation_matrix(coordinates):
     )
 
 
-def rotate_and_crop_roof(input_image: ndarray, roof_coordinates: str) -> ndarray:
+def rotate_and_crop_roof(satellite_image: ndarray, roof_coordinates: str) -> ndarray:
     """Rotates the input image to make the roof sides parallel to the image,
     then crops it.
 
     Parameters
     ----------
-    input_image : ndarray
+    satellite_image : ndarray
         The input image.
     roof_coordinates : str
         Roof coordinates: if string, it is parsed as a string of coordinates
@@ -319,10 +317,10 @@ def rotate_and_crop_roof(input_image: ndarray, roof_coordinates: str) -> ndarray
         roof_coordinates, dtype="int32", sort_coordinates=True
     )
 
-    if len(input_image.shape) < 3:
-        image_bgra = cv.cvtColor(input_image, cv.COLOR_GRAY2BGRA)
+    if len(satellite_image.shape) < 3:
+        image_bgra = cv.cvtColor(satellite_image, cv.COLOR_GRAY2BGRA)
     else:
-        image_bgra = cv.cvtColor(input_image, cv.COLOR_BGR2BGRA)
+        image_bgra = cv.cvtColor(satellite_image, cv.COLOR_BGR2BGRA)
 
     # rectangular roofs
     if len(roof_coords) == 4:
@@ -356,7 +354,7 @@ def rotate_and_crop_roof(input_image: ndarray, roof_coordinates: str) -> ndarray
         roof_coords = parse_str_as_coordinates(
             roof_coordinates, dtype="int32", sort_coordinates=False
         )
-        mask = np.zeros(input_image.shape[0:2], dtype="uint8")
+        mask = np.zeros(satellite_image.shape[0:2], dtype="uint8")
 
         pts = np.array(roof_coords, np.int32).reshape((-1, 1, 2))
 

@@ -15,14 +15,17 @@ from k2_oai.obstacle_detection.steps import (
     image_filtering,
     image_simple_binarization,
 )
-from k2_oai.obstacle_detection.utils import make_light_and_dark_thresh_images
+from k2_oai.obstacle_detection.utils import light_and_dark_thresholding
 from k2_oai.utils import is_valid_method
 from k2_oai.utils.images import rotate_and_crop_roof
 
-__all__ = ["manual_pipeline", "automatic_pipeline"]
+__all__ = [
+    "manual_obstacle_detection_pipeline",
+    "automatic_obstacle_detection_pipeline",
+]
 
 
-def manual_pipeline(
+def manual_obstacle_detection_pipeline(
     satellite_image: ndarray,
     roof_px_coordinates: str | ndarray,
     filtering_method: str,
@@ -78,30 +81,32 @@ def manual_pipeline(
           bounding boxes of the obstacles that have been found.
     """
 
+    is_valid_method(filtering_method, ["gaussian", "g", "bilateral", "b"])
     is_valid_method(binarization_method, ["o", "otsu", "c", "composite"])
 
     # crop the roof from the image using the coordinates
-    cropped_roof: ndarray = rotate_and_crop_roof(satellite_image, roof_px_coordinates)
+    cropped_roof: ndarray = rotate_and_crop_roof(
+        satellite_image=satellite_image, roof_coordinates=roof_px_coordinates
+    )
 
     # filtering steps
     filtered_roof: ndarray = image_filtering(
-        source_image=cropped_roof,
+        roof_image=cropped_roof,
         filtering_method=filtering_method,
         filtering_sigma=filtering_sigma,
     )
 
     if binarization_method in ["o", "otsu"]:
-        binarized_roof: ndarray = image_simple_binarization(filtered_roof)
+        binarized_roof: ndarray = image_simple_binarization(roof_image=filtered_roof)
     else:
         binarized_roof: ndarray = image_composite_binarization(
-            source_image=filtered_roof,
+            roof_image=filtered_roof,
             histogram_bins=binarization_histogram_bins,
             threshold_tolerance=binarization_tolerance,
         )
 
     blurred_roof: ndarray = image_erosion(
-        binarized_roof,
-        kernel_size=erosion_kernel,
+        roof_image=binarized_roof, kernel_size=erosion_kernel
     )
 
     if draw_obstacles:
@@ -122,5 +127,6 @@ def manual_pipeline(
             source_image=satellite_image,
             draw_obstacles=False,
         )
-        
+
         return obstacles_coordinates, labelled_roof
+
