@@ -67,16 +67,16 @@ def image_filtering(
 
         if len(roof_image.shape) > 2:
             if roof_image.shape[2] > 3:  # bgra image
-                image_to_bgr = cv.cvtColor(roof_image, cv.COLOR_BGRA2BGR)
-                roof_image[:, :, 0:3] = bilateral_filter(image_to_bgr, sigma_x)
+                bgr_roof = cv.cvtColor(roof_image, cv.COLOR_BGRA2BGR)
+                roof_image[:, :, 0:3] = bilateral_filter(bgr_roof, sigma_x)
                 return roof_image
             elif roof_image.shape[2] <= 3:  # bgr image
-                filtered_image = bilateral_filter(roof_image, sigma_x)
-                return cv.cvtColor(filtered_image, cv.COLOR_BGR2BGRA)
+                filtered_roof = bilateral_filter(roof_image, sigma_x)
+                return cv.cvtColor(filtered_roof, cv.COLOR_BGR2BGRA)
 
         # grayscale image
-        filtered_image = bilateral_filter(roof_image, sigma_x)
-        return cv.cvtColor(filtered_image, cv.COLOR_GRAY2BGRA)
+        filtered_roof = bilateral_filter(roof_image, sigma_x)
+        return cv.cvtColor(filtered_roof, cv.COLOR_GRAY2BGRA)
 
     else:
         return cv.GaussianBlur(roof_image, (sigma_x, sigma_y), 0)
@@ -100,15 +100,15 @@ def image_simple_binarization(roof_image: ndarray) -> ndarray:
 
     otsu_threshold, _ = compute_otsu_threshold(roof_image, zeros_in_mask)
 
-    _threshold, binarized_image = cv.threshold(
+    _threshold, binarized_roof = cv.threshold(
         roof_image, otsu_threshold, 255, cv.THRESH_BINARY
     )
 
-    if np.sum(binarized_image == 255) > np.sum(binarized_image == 0) - zeros_in_mask:
-        binarized_image = cv.bitwise_not(binarized_image)
-        binarized_image = cv.bitwise_and(binarized_image, roof_image[:, :, 3])
+    if np.sum(binarized_roof == 255) > np.sum(binarized_roof == 0) - zeros_in_mask:
+        binarized_roof = cv.bitwise_not(binarized_roof)
+        binarized_roof = cv.bitwise_and(binarized_roof, roof_image[:, :, 3])
 
-    return binarized_image
+    return binarized_roof
 
 
 def image_composite_binarization(
@@ -133,21 +133,21 @@ def image_composite_binarization(
     """
     zeros_in_mask = int(np.sum(roof_image[:, :, 3] == 0))
 
-    light_thresholded_image, dark_thresholded_image = light_and_dark_thresholding(
+    light_thresholded_roof, dark_thresholded_roof = light_and_dark_thresholding(
         source_image=roof_image,
         binarization_histogram_bins=histogram_bins,
         binarization_tolerance=threshold_tolerance,
         zeros_in_mask=zeros_in_mask,
     )
 
-    binarized_image = cv.bitwise_or(light_thresholded_image, dark_thresholded_image)
-    binarized_image = cv.bitwise_and(binarized_image[:, :, 0], roof_image[:, :, 3])
+    binarized_roof = cv.bitwise_or(light_thresholded_roof, dark_thresholded_roof)
+    binarized_roof = cv.bitwise_and(binarized_roof[:, :, 0], roof_image[:, :, 3])
 
-    if np.sum(binarized_image == 255) > np.sum(binarized_image == 0) - zeros_in_mask:
-        binarized_image = cv.bitwise_not(binarized_image)
-        binarized_image = cv.bitwise_and(binarized_image, roof_image[:, :, 3])
+    if np.sum(binarized_roof == 255) > np.sum(binarized_roof == 0) - zeros_in_mask:
+        binarized_roof = cv.bitwise_not(binarized_roof)
+        binarized_roof = cv.bitwise_and(binarized_roof, roof_image[:, :, 3])
 
-    return binarized_image
+    return binarized_roof
 
 
 def image_erosion(roof_image: ndarray, kernel_size: int | None = None) -> ndarray:
@@ -179,8 +179,8 @@ def image_erosion(roof_image: ndarray, kernel_size: int | None = None) -> ndarra
         is_positive_odd_integer(kernel_size)
 
     kernel: ndarray = np.ones((kernel_size, kernel_size), np.uint8)
-    image_open_morphology = cv.morphologyEx(roof_image, cv.MORPH_OPEN, kernel)
-    return cv.morphologyEx(image_open_morphology, cv.MORPH_CLOSE, kernel)
+    roof_open_morph = cv.morphologyEx(roof_image, cv.MORPH_OPEN, kernel)
+    return cv.morphologyEx(roof_open_morph, cv.MORPH_CLOSE, kernel)
 
 
 def detect_obstacles(
@@ -236,11 +236,11 @@ def detect_obstacles(
         raise ValueError("`source_image` cannot be None when `draw_obstacles` is True")
     elif draw_obstacles:
         if box_or_polygon == "box":
-            obstacles_coordinates, labelled_image = get_bounding_boxes(
+            obstacles_coordinates, labelled_roof = get_bounding_boxes(
                 blobs_stats, min_area, source_image, draw_obstacles=True
             )
         else:
-            obstacles_coordinates, labelled_image = get_bounding_polygon(
+            obstacles_coordinates, labelled_roof = get_bounding_polygon(
                 blobs_stats,
                 obstacles_blobs,
                 min_area,
@@ -248,7 +248,7 @@ def detect_obstacles(
                 draw_obstacles=True,
             )
 
-        return obstacles_coordinates, labelled_image, obstacles_blobs
+        return obstacles_coordinates, labelled_roof, obstacles_blobs
     else:
         if box_or_polygon == "box":
             obstacles_coordinates = get_bounding_boxes(
