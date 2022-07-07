@@ -124,11 +124,11 @@ def obstacle_annotator_page(
     # | Load and plot the roof |
     # +------------------------+
 
-    roof_id_label = all_annotations.loc[
-        lambda df: df.roof_id == chosen_roof_id, "is_perfectly_labelled"
-    ].values[0]
-
     if chosen_roof_id in all_annotations.roof_id.values:
+        roof_id_label = all_annotations.loc[
+            lambda df: df.roof_id == chosen_roof_id, "is_perfectly_labelled"
+        ].values[0]
+
         st.info(
             f"Roof {chosen_roof_id} is already annotated as "
             f"{'`perfectly labelled`' if roof_id_label else '`not perfectly labelled`'}"
