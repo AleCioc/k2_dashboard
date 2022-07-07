@@ -91,11 +91,12 @@ def downsample_image(image: ndarray, downsampling_factor: int):
 
     Parameters
     ----------
-    image
-    downsampling_factor
+    image: ndarray
+    downsampling_factor: int
 
     Returns
     -------
+    ndarray
 
     """
     new_shape = np.divide(image.shape, downsampling_factor).astype(int)
@@ -136,10 +137,10 @@ def draw_roofs_and_obstacles_on_photo(
     ndarray
         Image with labels drawn.
     """
-    photo_copy = satellite_image.copy()
+    image_copy = satellite_image.copy()
 
     points: ndarray = parse_str_as_coordinates(roof_coordinates).reshape((-1, 1, 2))
-    labelled_image: ndarray = cv.polylines(photo_copy, [points], True, (0, 0, 255), 2)
+    labelled_image: ndarray = cv.polylines(image_copy, [points], True, (0, 0, 255), 2)
 
     if obstacle_coordinates is None:
         return labelled_image
@@ -147,7 +148,7 @@ def draw_roofs_and_obstacles_on_photo(
     for obst in obstacle_coordinates:
         points: ndarray = parse_str_as_coordinates(obst).reshape((-1, 1, 2))
         labelled_image: ndarray = cv.polylines(
-            photo_copy, [points], True, (255, 0, 0), 2
+            image_copy, [points], True, (255, 0, 0), 2
         )
 
     return labelled_image
