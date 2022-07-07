@@ -220,12 +220,7 @@ def detect_obstacles(
 
     Returns
     -------
-    tuple[ndarray, ndarray, list[tuple[str]]]
-        Returns a tuple of three objects:
-        - The cropped image with labels
-        - The image with the bounding box of the labels,
-        - The list of coordinates of the top-left and bottom-right points of the
-          bounding boxes of the obstacles that have been found.
+    # TODO: write docs for return values
     """
 
     if min_area == -1:
