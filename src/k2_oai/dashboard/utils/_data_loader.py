@@ -33,6 +33,7 @@ __all__ = [
     "st_load_photo_and_coordinates",
     "st_load_photo_and_roof",
     "st_save_annotations",
+    "get_coordinates_from_roof_id",
 ]
 
 
