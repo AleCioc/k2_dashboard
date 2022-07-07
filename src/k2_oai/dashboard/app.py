@@ -1,3 +1,7 @@
+"""
+Launches the streamlit dashboard.
+"""
+
 import os
 
 import streamlit as st

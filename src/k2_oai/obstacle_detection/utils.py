@@ -1,3 +1,7 @@
+"""
+Utilities necessary for the .steps module of the obstacle_detection package.
+"""
+
 from __future__ import annotations
 
 import cv2 as cv

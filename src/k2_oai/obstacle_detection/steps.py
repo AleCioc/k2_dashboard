@@ -1,17 +1,5 @@
 """
-Applies a pure computer vision approach to detect obstacles in the roof images.
-
-The methods in this module are implemented sequentially in the `pipeline` module.
-
-The function takes in a greyscale image; then applies two steps:
-1. Applying a filter - either a Gaussian blur or a bilateral filter.
-2. Applying a threshold to the image.
-3. Apply a morphological opening to the image, to further reduce noise.
-
-Finally, a connected component analysis is used to perform a blob analysis.
-
-As a reference, see the official Python tutorial from OpenCV:
-https://docs.opencv.org/4.x/d3/db4/tutorial_py_watershed.html
+Functions to preprocess roof images and perform obstacle detection.
 """
 
 from __future__ import annotations
