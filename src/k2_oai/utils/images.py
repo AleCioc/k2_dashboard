@@ -318,18 +318,18 @@ def rotate_and_crop_roof(satellite_image: ndarray, roof_coordinates: str) -> nda
     )
 
     if len(satellite_image.shape) < 3:
-        image_bgra = cv.cvtColor(satellite_image, cv.COLOR_GRAY2BGRA)
+        bgra_image = cv.cvtColor(satellite_image, cv.COLOR_GRAY2BGRA)
     else:
-        image_bgra = cv.cvtColor(satellite_image, cv.COLOR_BGR2BGRA)
+        bgra_image = cv.cvtColor(satellite_image, cv.COLOR_BGR2BGRA)
 
     # rectangular roofs
     if len(roof_coords) == 4:
         rotation_matrix = _compute_rotation_matrix(roof_coords)
 
         rotated_image = cv.warpAffine(
-            image_bgra,
+            bgra_image,
             rotation_matrix,
-            (image_bgra.shape[0] * 2, image_bgra.shape[1] * 2),
+            (bgra_image.shape[0] * 2, bgra_image.shape[1] * 2),
             cv.INTER_LINEAR,
             cv.BORDER_CONSTANT,
         )
@@ -360,11 +360,11 @@ def rotate_and_crop_roof(satellite_image: ndarray, roof_coordinates: str) -> nda
 
         cv.fillConvexPoly(mask, pts, (255, 255, 255))
 
-        image_bgra[:, :, 3] = mask
+        bgra_image[:, :, 3] = mask
 
         bot_right = np.max(pts, axis=0)
         top_left = np.min(pts, axis=0)
 
-        return image_bgra[
+        return bgra_image[
             top_left[0][1] : bot_right[0][1], top_left[0][0] : bot_right[0][0], :
         ]
