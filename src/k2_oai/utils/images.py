@@ -86,7 +86,18 @@ def pad_image(
     return padded_image, (margin_h, margin_w)
 
 
-def downsample_image(image, downsampling_factor):
+def downsample_image(image: ndarray, downsampling_factor: int):
+    """Compresses the image
+
+    Parameters
+    ----------
+    image
+    downsampling_factor
+
+    Returns
+    -------
+
+    """
     new_shape = np.divide(image.shape, downsampling_factor).astype(int)
     output_image = np.zeros(new_shape, dtype="uint8")
 
@@ -198,7 +209,7 @@ def draw_obstacles_on_cropped_roof(
     # polygonal roof
     else:
         for obst in obstacle_coordinates:
-            points: np.array = parse_str_as_coordinates(obst).reshape((-1, 1, 2))
+            points: ndarray = parse_str_as_coordinates(obst).reshape((-1, 1, 2))
 
             top_left = np.min(roof_coords, axis=0)
 
@@ -254,9 +265,9 @@ def draw_obstacles_on_black_fill(
         center = roof_coords[0]
 
         for obst in obstacle_coordinates:
-            points_obs: np.array = parse_str_as_coordinates(obst)
+            points_obs: ndarray = parse_str_as_coordinates(obst)
 
-            obst_vertex = len(points_obs)
+            obst_vertex: int = len(points_obs)
 
             pts1 = np.hstack((points_obs, np.ones((obst_vertex, 1))))
 
