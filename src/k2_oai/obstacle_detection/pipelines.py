@@ -79,6 +79,8 @@ def manual_obstacle_detection_pipeline(
         (height or width), divided by 10 and then rounded up.
     draw_obstacles : bool, default: False
         Whether to return the source images where obstacles have been labelled.
+    dashboard_mode : bool, default: False
+        Returns multiple outputs. Used only inside the dashboard.
 
     Returns
     -------
@@ -122,16 +124,25 @@ def manual_obstacle_detection_pipeline(
         )
 
         return obstacles_coordinates
-    else:
+    elif draw_obstacles:
         obstacles_coordinates, labelled_roof, _ = detect_obstacles(
+            processed_roof=blurred_roof,
+            box_or_polygon=obstacle_boundary_type,
+            min_area=obstacle_minimum_area,
+            source_image=satellite_image,
+            draw_obstacles=True,
+        )
+
+        return obstacles_coordinates, labelled_roof
+    elif dashboard_mode:
+        obstacles_coordinates, labelled_roof, obstacles_blobs = detect_obstacles(
             processed_roof=blurred_roof,
             box_or_polygon=obstacle_boundary_type,
             min_area=obstacle_minimum_area,
             source_image=satellite_image,
             draw_obstacles=False,
         )
-
-        return obstacles_coordinates, labelled_roof
+        return obstacles_coordinates, obstacles_blobs, labelled_roof, filtered_roof
 
 
 # def automatic_obstacle_detection_pipeline(
