@@ -114,7 +114,9 @@ def choose_folder_to_load_metadata(
     st.markdown("## :open_file_folder: Photos Folder")
 
     # get options for `chosen_folder`
-    root_contents = utils.st_listdir_no_cache(DROPBOX_RAW_PHOTOS_ROOT).item_name.values
+    root_contents = utils.st_listdir_not_cached(
+        DROPBOX_RAW_PHOTOS_ROOT
+    ).item_name.values
     photos_folders = sorted(file for file in root_contents if not file.endswith(".csv"))
 
     if not only_folders:
@@ -209,7 +211,7 @@ def choose_annotations_checkpoint(
     st.markdown("## :card_index_dividers: Annotations")
 
     folder_contents = sorted(
-        utils.st_listdir_no_cache(dropbox_path).item_name.to_list(),
+        utils.st_listdir_not_cached(dropbox_path).item_name.to_list(),
         reverse=True,
     )
 
