@@ -105,7 +105,9 @@ def downsample_image(image, downsampling_factor):
 
 
 def draw_roofs_and_obstacles_on_photo(
-    satellite_image: ndarray, roof_coordinates: str, obstacle_coordinates: str | None
+    satellite_image: ndarray,
+    roof_coordinates: str,
+    obstacle_coordinates: str | list[str] | None,
 ):
     """Draws roof and obstacle labels on the input image from their coordinates.
 
@@ -143,7 +145,7 @@ def draw_roofs_and_obstacles_on_photo(
 def draw_obstacles_on_cropped_roof(
     cropped_roof: ndarray,
     roof_coordinates: str,
-    obstacle_coordinates: str,
+    obstacle_coordinates: str | list[str],
 ) -> ndarray:
     """Draws roof and obstacle labels on the input image from their coordinates.
 
