@@ -154,9 +154,7 @@ def draw_roofs_and_obstacles_on_photo(
 
 
 def draw_obstacles_on_cropped_roof(
-    cropped_roof: ndarray,
-    roof_coordinates: str,
-    obstacle_coordinates: str | list[str],
+    cropped_roof: ndarray, roof_coordinates: str, obstacles_coordinates: str | list[str]
 ) -> ndarray:
     """Draws roof and obstacle labels on the input image from their coordinates.
 
@@ -166,7 +164,7 @@ def draw_obstacles_on_cropped_roof(
         Input image.
     roof_coordinates : str or ndarray
         Roof coordinates, either as string or list of lists of integers.
-    obstacle_coordinates : str or ndarray or None (default: None)
+    obstacles_coordinates : str or ndarray or None (default: None)
         Obstacle coordinates. Can be None if there are no obstacles. Defaults to None.
 
     Returns
@@ -176,7 +174,7 @@ def draw_obstacles_on_cropped_roof(
     """
     labelled_roof = cropped_roof.copy()
 
-    if obstacle_coordinates is None:
+    if obstacles_coordinates is None:
         return labelled_roof
 
     roof_coords = parse_str_as_coordinates(
@@ -188,7 +186,7 @@ def draw_obstacles_on_cropped_roof(
         rotation_matrix = _compute_rotation_matrix(roof_coords)
         center = roof_coords[0]
 
-        for obst in obstacle_coordinates:
+        for obst in obstacles_coordinates:
             points_obs: np.array = parse_str_as_coordinates(obst)
 
             obst_vertex = len(points_obs)
@@ -208,7 +206,7 @@ def draw_obstacles_on_cropped_roof(
 
     # polygonal roof
     else:
-        for obst in obstacle_coordinates:
+        for obst in obstacles_coordinates:
             points: ndarray = parse_str_as_coordinates(obst).reshape((-1, 1, 2))
 
             top_left = np.min(roof_coords, axis=0)
