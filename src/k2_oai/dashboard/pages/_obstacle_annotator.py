@@ -136,7 +136,7 @@ def obstacle_annotator_page(
     else:
         st.warning(f"Roof {chosen_roof_id} is not annotated")
 
-    photo, roof, labelled_photo, labelled_roof = utils.st_load_photo_and_roof(
+    photo, labelled_photo, cropped_roof, labelled_roof = utils.st_load_photo_and_roof(
         int(chosen_roof_id),
         obstacles_metadata,
         st.session_state[key_photos_folder],
@@ -144,34 +144,34 @@ def obstacle_annotator_page(
 
     st_labelled, st_not_labelled = st.columns(2)
 
-    with st_labelled:
+    with st_not_labelled:
         st.image(
-            labelled_roof,
+            photo,
             use_column_width=True,
             channels="BGRA",
-            caption="Labelled Roof",
+            caption="Original image",
         )
 
         st.image(
-            labelled_photo,
+            cropped_roof,
             use_column_width=True,
             channels="BGRA",
             caption="Cropped roof",
         )
 
-    with st_not_labelled:
+    with st_labelled:
         st.image(
-            roof,
+            labelled_photo,
             use_column_width=True,
             channels="BGRA",
             caption="Original image, labelled",
         )
 
         st.image(
-            photo,
+            labelled_roof,
             use_column_width=True,
             channels="BGRA",
-            caption="Original image",
+            caption="Labelled Roof",
         )
 
     # +----------------+
