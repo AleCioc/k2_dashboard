@@ -26,6 +26,7 @@ def compute_otsu_threshold(
     Parameters
     ----------
     source_image : ndarray
+        Should be applied to a cropped roof.
     zeros_in_mask : int or None (default: None)
         The number of elements equal to zero in the image_mask. If not provided, is
         computed automatically.
@@ -82,6 +83,7 @@ def compute_composite_threshold(
     Parameters
     ----------
     source_image : ndarray
+        Should be applied to a cropped roof.
     image_mask : ndarray or None (default: None)
         The number of elements equal to zero in the image_mask. If not provided, is
         computed automatically.
@@ -167,8 +169,12 @@ def light_and_dark_thresholding(
     Parameters
     ----------
     source_image : ndarray
+        Should be applied to a cropped roof.
     binarization_histogram_bins : int
+        Number of bins to use to compute the histogram.
     binarization_tolerance : int
+        Cutoff to add and subtract from the threshold to obtain the light and dark
+        thresholded images.
     image_mask : ndarray or None (default: None)
         The number of elements equal to zero in the image_mask. If not provided, is
         computed automatically.
@@ -206,21 +212,21 @@ def light_and_dark_thresholding(
             infer_tolerance=False,
         )
 
-    _threshold, image_thresholded_light = cv.threshold(
+    _threshold, light_thresholded_roof = cv.threshold(
         image_mask,
         binarization_threshold + binarization_tolerance,
         255,
         cv.THRESH_BINARY,
     )
 
-    _threshold, image_thresholded_dark = cv.threshold(
+    _threshold, dark_thresholded_roof = cv.threshold(
         image_mask,
         binarization_threshold - binarization_tolerance,
         255,
         cv.THRESH_BINARY_INV,
     )
 
-    return image_thresholded_light, image_thresholded_dark
+    return light_thresholded_roof, dark_thresholded_roof
 
 
 def get_bounding_boxes(
