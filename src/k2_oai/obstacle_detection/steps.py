@@ -251,7 +251,7 @@ def detect_obstacles(
             )
 
         return obstacles_coordinates, labelled_roof, obstacles_blobs
-    else:
+    elif not draw_obstacles:
         if box_or_polygon == "box":
             obstacles_coordinates = get_bounding_boxes(
                 blobs_stats, min_area, draw_obstacles=False
