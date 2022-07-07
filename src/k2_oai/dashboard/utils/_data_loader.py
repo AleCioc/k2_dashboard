@@ -7,6 +7,7 @@ from __future__ import annotations
 import os
 
 import streamlit as st
+from pandas import DataFrame
 
 from k2_oai import dropbox as dbx
 from k2_oai.data import load
@@ -20,7 +21,7 @@ from k2_oai.utils.images import (
 __all__ = [
     "st_dropbox_connect",
     "st_listdir",
-    "st_listdir_no_cache",
+    "st_listdir_not_cached",
     "st_load_dataframe",
     "st_load_metadata",
     "st_load_geo_metadata",
@@ -29,6 +30,7 @@ __all__ = [
     "st_load_photo_list_and_metadata",
     "st_load_photo",
     "st_load_photo_from_roof_id",
+    "st_load_photo_and_coordinates",
     "st_load_photo_and_roof",
     "st_save_annotations",
 ]
@@ -49,7 +51,7 @@ def st_listdir(path):
     return dbx.dropbox_listdir(path, dbx_app)
 
 
-def st_listdir_no_cache(path):
+def st_listdir_not_cached(path):
     """No cache version of st_listdir. It's meant to be used in streamlit components
     where you want to reload the list of files. In this case, the list will be sensitive
     to changes in the dropbox folders which will be reflected immediately. Normally,
@@ -146,17 +148,13 @@ def st_load_photo(
 
 @st.cache(allow_output_mutation=True)
 def st_load_photo_from_roof_id(
-    roof_id,
-    metadata,
-    chosen_folder,
-    bgr_only=False,
-    greyscale_only=False,
+    roof_id, metadata, chosen_folder, as_bgr=False, as_greyscale=False
 ):
     dbx_app = st_dropbox_connect()
     dbx_path = f"{DROPBOX_RAW_PHOTOS_ROOT}/{chosen_folder}"
 
     return load.dbx_load_photos_from_roof_id(
-        roof_id, metadata, dbx_path, dbx_app, bgr_only, greyscale_only
+        roof_id, metadata, dbx_path, dbx_app, as_bgr, as_greyscale
     )
 
 
@@ -176,10 +174,10 @@ def get_coordinates_from_roof_id(roof_id, photos_metadata) -> tuple[str, list[st
     return roof_px_coordinates, obstacles_px_coordinates
 
 
-def st_load_photo_and_roof(
-    roof_id,
-    photos_metadata,
-    chosen_folder,
+def st_load_photo_and_coordinates(
+    roof_id: int,
+    photos_metadata: DataFrame,
+    chosen_folder: str,
     as_greyscale: bool = False,
 ):
     roof_px_coord, obstacles_px_coord = get_coordinates_from_roof_id(
@@ -187,29 +185,40 @@ def st_load_photo_and_roof(
     )
 
     if as_greyscale:
-        photo = st_load_photo_from_roof_id(
-            roof_id, photos_metadata, chosen_folder, greyscale_only=True
+        satellite_photo = st_load_photo_from_roof_id(
+            roof_id, photos_metadata, chosen_folder, as_greyscale=True
         )
     else:
-        photo = st_load_photo_from_roof_id(
-            roof_id, photos_metadata, chosen_folder, bgr_only=True
+        satellite_photo = st_load_photo_from_roof_id(
+            roof_id, photos_metadata, chosen_folder, as_bgr=True
         )
 
+    return satellite_photo, roof_px_coord, obstacles_px_coord
+
+
+def st_load_photo_and_roof(
+    roof_id: int,
+    photos_metadata: DataFrame,
+    chosen_folder: str,
+    as_greyscale: bool = False,
+):
+    satellite_photo, roof_coords, obstacles_coords = st_load_photo_and_coordinates(
+        roof_id=roof_id,
+        photos_metadata=photos_metadata,
+        chosen_folder=chosen_folder,
+        as_greyscale=as_greyscale,
+    )
+
     labelled_photo = draw_roofs_and_obstacles_on_photo(
-        photo, roof_px_coord, obstacles_px_coord
+        satellite_photo, roof_coords, obstacles_coords
     )
-    # labelled_photo = experimental_draw_labels(
-    #     photo,
-    #     roof_px_coord,
-    #     obstacles_px_coord
-    # )
 
-    roof = rotate_and_crop_roof(photo, roof_px_coord)
+    cropped_roof = rotate_and_crop_roof(satellite_photo, roof_coords)
     labelled_roof = draw_obstacles_on_cropped_roof(
-        roof, roof_px_coord, obstacles_px_coord
+        cropped_roof, roof_coords, obstacles_coords
     )
 
-    return photo, roof, labelled_photo, labelled_roof
+    return satellite_photo, labelled_photo, cropped_roof, labelled_roof
 
 
 def st_save_annotations(data_to_upload, filename, destination_folder):
