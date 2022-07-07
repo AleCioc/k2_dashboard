@@ -38,7 +38,8 @@ def image_filtering(
         The method used to apply the filter. It must be either 'bilateral' (or 'b')
         or 'gaussian' (or 'g').
     filtering_sigma : int
-        The sigma value of the filter. It must be a positive, odd integer.
+        The sigma value of the filter. It must be a positive, odd integer. If -1, the
+        value is inferred.
 
     Returns
     -------
@@ -122,8 +123,13 @@ def image_composite_binarization(
     Parameters
     ----------
     roof_image : ndarray
+        A BGRA image.
     histogram_bins : int
+        Number of bins used to compute the image's greyscale histogram. This histogram
+        is used to compute the binarization threshold.
     threshold_tolerance : int
+        The value to add and subtract from the binarization threshold to obtain the
+        light and dark thresholded images. If -1, is inferred.
 
     Returns
     -------
@@ -150,7 +156,7 @@ def image_composite_binarization(
     return binarized_roof
 
 
-def image_erosion(roof_image: ndarray, kernel_size: int | None = None) -> ndarray:
+def image_erosion(roof_image: ndarray, kernel_size: int = -1) -> ndarray:
     """Applies an opening[1] (i.e., erosion followed by dilation) on the input image,
     to remove noise.
 
@@ -158,9 +164,9 @@ def image_erosion(roof_image: ndarray, kernel_size: int | None = None) -> ndarra
     ----------
     roof_image : ndarray
         The input image to which the opening will be applied.
-    kernel_size : int or None (default: None)
+    kernel_size : int, default: -1
         Size of the kernel used for the morphological opening.
-        Must be a positive, odd number. If None, defaults to 3 if image size is greater
+        Must be a positive, odd number. If -1, defaults to 3 if image size is greater
         than 10_000, otherwise to 1.
 
     Returns
@@ -173,7 +179,7 @@ def image_erosion(roof_image: ndarray, kernel_size: int | None = None) -> ndarra
     .. [1]
         https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html
     """
-    if kernel_size is None:
+    if kernel_size == -1:
         kernel_size: int = 1 if roof_image.size < 10_000 else 3
     else:
         is_positive_odd_integer(kernel_size)
@@ -187,7 +193,7 @@ def detect_obstacles(
     processed_roof: ndarray,
     box_or_polygon: str = "box",
     min_area: int = -1,
-    source_image: ndarray = None,
+    source_image: ndarray | None = None,
     draw_obstacles: bool = False,
 ):
     """Finds the connected components in a binary image and assigns a label to them.
@@ -205,11 +211,12 @@ def detect_obstacles(
         Minimum area of the connected components to be kept. Defaults to zero.
         If set to "auto", it will default to the largest component of the image
         (height or width), divided by 10 and then rounded up.
-    source_image : ndarray
-        The image where obstacles have been labelled.
+    source_image : ndarray or None, default: None
+        The image from where the roof was cropped. Used only if the param draw_obstacles
+        is True.
     draw_obstacles : bool, default: False
         Whether to return a copy of the source image with obstacles bounding boxes/
-        polygons drawn on it
+        polygons drawn on it.
 
     Returns
     -------
