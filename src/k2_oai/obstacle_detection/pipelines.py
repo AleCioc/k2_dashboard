@@ -81,7 +81,6 @@ def manual_obstacle_detection_pipeline(
           bounding boxes of the obstacles that have been found.
     """
 
-    is_valid_method(filtering_method, ["gaussian", "g", "bilateral", "b"])
     is_valid_method(binarization_method, ["o", "otsu", "c", "composite"])
 
     # crop the roof from the image using the coordinates
