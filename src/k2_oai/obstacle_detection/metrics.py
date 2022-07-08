@@ -11,7 +11,7 @@ from numpy import ndarray
 from k2_oai.utils.images import downsample_image, draw_obstacles_on_black_fill
 
 
-def surface_absolute_error(
+def absolute_surface_error(
     evaluation_mask: ndarray,
     roof_coordinates: str,
     obstacle_coordinates: str,
@@ -19,7 +19,20 @@ def surface_absolute_error(
     return_error_mask: bool = False,
 ):
     # TODO: add docstring
-    """ """
+    """Reinterpretation of intersection over union.
+
+    Parameters
+    ----------
+    evaluation_mask
+    roof_coordinates
+    obstacle_coordinates
+    downsampling_factor
+    return_error_mask
+
+    Returns
+    -------
+
+    """
 
     labelled_roof = draw_obstacles_on_black_fill(
         evaluation_mask,
@@ -31,7 +44,7 @@ def surface_absolute_error(
     downsampled_eval_mask = downsample_image(evaluation_mask, downsampling_factor)
 
     error_mask = cv.bitwise_xor(downsampled_labelled_roof, downsampled_eval_mask)
-    error = np.sum(error_mask == 255) / error_mask.size * 100
+    error = np.sum(error_mask == 0) / error_mask.size * 100
 
     if return_error_mask:
         return error, error_mask
