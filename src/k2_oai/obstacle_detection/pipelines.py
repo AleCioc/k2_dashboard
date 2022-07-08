@@ -84,7 +84,7 @@ def manual_obstacle_detection_pipeline(
     # TODO: write docs for return values
     """
 
-    is_valid_method(binarization_method, ["o", "otsu", "c", "composite"])
+    is_valid_method(binarization_method, ["s", "simple", "o", "otsu", "c", "composite"])
 
     cropped_roof: ndarray = rotate_and_crop_roof(
         satellite_image=satellite_image, roof_coordinates=roof_px_coordinates
@@ -96,7 +96,7 @@ def manual_obstacle_detection_pipeline(
         filtering_sigma=filtering_sigma,
     )
 
-    if binarization_method in ["o", "otsu"]:
+    if binarization_method in ["o", "otsu", "s", "simple"]:
         binarized_roof: ndarray = image_simple_binarization(roof_image=filtered_roof)
     else:
         binarized_roof: ndarray = image_composite_binarization(

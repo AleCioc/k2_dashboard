@@ -225,7 +225,9 @@ def choose_annotations_checkpoint(
 
     if annotations_file is None:
         return None
-    return utils.st_load_annotations(annotations_file).convert_dtypes()
+    return utils.st_load_annotations(
+        filename=annotations_file, mode=mode
+    ).convert_dtypes()
 
 
 def write_and_save_annotations(

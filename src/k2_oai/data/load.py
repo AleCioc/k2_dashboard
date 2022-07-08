@@ -9,14 +9,18 @@ import geopandas
 import pandas as pd
 
 from k2_oai import dropbox as dbx
-from k2_oai.dropbox import DROPBOX_LABEL_ANNOTATIONS_PATH, DROPBOX_PHOTOS_METADATA_PATH
+from k2_oai.dropbox import (
+    DROPBOX_HYPERPARAM_ANNOTATIONS_PATH,
+    DROPBOX_LABEL_ANNOTATIONS_PATH,
+    DROPBOX_PHOTOS_METADATA_PATH,
+)
 from k2_oai.utils.images import draw_roofs_and_obstacles_on_photo, rotate_and_crop_roof
 
 __all__ = [
     "dbx_load_dataframe",
     "dbx_load_metadata",
     "dbx_load_geo_metadata",
-    "dbx_load_label_annotations",
+    "dbx_load_annotations",
     "dbx_load_photo",
     "dbx_load_photos_from_roof_id",
 ]
@@ -105,10 +109,18 @@ def dbx_create_label_annotations(dropbox_app, num_checkpoints: int = 0):
     os.remove("obstacles-labels_annotations.csv")
 
 
-def dbx_load_label_annotations(filename, dropbox_app):
+def dbx_load_annotations(filename, mode, dropbox_app):
+    if mode not in ["label", "hyperparam", "hyperparameters"]:
+        raise ValueError(
+            "`mode` must be one of 'label', 'hyperparam' or 'hyperparameters'"
+        )
+    elif mode == "label":
+        dbx_path = DROPBOX_LABEL_ANNOTATIONS_PATH
+    else:
+        dbx_path = DROPBOX_HYPERPARAM_ANNOTATIONS_PATH
     return dbx_load_dataframe(
         filename,
-        dropbox_path=DROPBOX_LABEL_ANNOTATIONS_PATH,
+        dropbox_path=dbx_path,
         dropbox_app=dropbox_app,
     )
 
@@ -147,17 +159,17 @@ def dbx_load_photo(
 
 def dbx_load_photos_from_roof_id(
     roof_id,
-    metadata,
+    photos_metadata,
     dropbox_path,
     dropbox_app,
-    bgr_only: bool = False,
-    greyscale_only: bool = False,
+    as_bgr: bool = False,
+    as_greyscale: bool = False,
 ):
-    photo_name = metadata.loc[lambda df: df["roof_id"] == roof_id, "imageURL"].values[0]
+    photo_name = photos_metadata.loc[
+        lambda df: df["roof_id"] == roof_id, "imageURL"
+    ].values[0]
 
-    return dbx_load_photo(
-        photo_name, dropbox_path, dropbox_app, bgr_only, greyscale_only
-    )
+    return dbx_load_photo(photo_name, dropbox_path, dropbox_app, as_bgr, as_greyscale)
 
 
 def get_coordinates_from_roof_id(roof_id, metadata) -> tuple[str, list[str]]:
@@ -189,11 +201,7 @@ def load_and_crop_roof_from_roof_id(
 
     if greyscale_only:
         greyscale_image = dbx_load_photos_from_roof_id(
-            roof_id,
-            metadata,
-            dropbox_path,
-            dropbox_app,
-            greyscale_only=greyscale_only,
+            roof_id, metadata, dropbox_path, dropbox_app, as_greyscale=greyscale_only
         )
         if with_labels:
             labelled_roof = draw_roofs_and_obstacles_on_photo(
@@ -204,7 +212,7 @@ def load_and_crop_roof_from_roof_id(
 
     if bgr_only:
         bgr_image = dbx_load_photos_from_roof_id(
-            roof_id, metadata, dropbox_path, dropbox_app, bgr_only=bgr_only
+            roof_id, metadata, dropbox_path, dropbox_app, as_bgr=bgr_only
         )
         if with_labels:
             labelled_roof = draw_roofs_and_obstacles_on_photo(

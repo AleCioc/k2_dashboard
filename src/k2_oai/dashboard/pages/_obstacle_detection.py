@@ -62,7 +62,7 @@ def obstacle_detection_page(
         chosen_filtering_method = st.radio(
             "Choose filtering method:",
             options=("Bilateral", "Gaussian"),
-        )
+        ).lower()
 
         chosen_filtering_sigma = st.slider(
             "Filtering sigma (positive, odd integer):",
@@ -73,7 +73,7 @@ def obstacle_detection_page(
         chosen_binarisation_method = st.radio(
             "Select the desired binarisation method:",
             options=("Simple", "Composite"),
-        )
+        ).lower()
 
         if chosen_binarisation_method == "Composite":
             chosen_binarisation_tolerance = st.slider(
@@ -137,14 +137,14 @@ def obstacle_detection_page(
         int(chosen_roof_id), obstacles_metadata, chosen_folder
     )
 
-    roof_coordinates, obstacles_coordinates = utils.get_coordinates_from_roof_id(
+    roof_coordinates, k2_obstacles_coordinates = utils.get_coordinates_from_roof_id(
         int(chosen_roof_id), obstacles_metadata
     )
 
     (
         obstacles_coordinates,
         labelled_roof,
-        obstacle_blobs,
+        obstacles_blobs,
     ) = pipelines.manual_obstacle_detection_pipeline(
         satellite_image=satellite_photo,
         roof_px_coordinates=roof_coordinates,
@@ -195,7 +195,7 @@ def obstacle_detection_page(
     )
 
     st_results_widgets[1].image(
-        (obstacle_blobs * 60) % 256,
+        (obstacles_blobs * 60) % 256,
         use_column_width=True,
         caption="Obstacle Blobs (Greyscale)",
     )

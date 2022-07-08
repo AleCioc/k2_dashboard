@@ -47,9 +47,9 @@ def st_dropbox_connect():
 
 
 @st.cache
-def st_listdir(path):
+def st_listdir(path: str):
     dbx_app = st_dropbox_connect()
-    return dbx.dropbox_listdir(path, dbx_app)
+    return dbx.dropbox_listdir(dropbox_path=path, dropbox_app=dbx_app)
 
 
 def st_listdir_not_cached(path):
@@ -70,43 +70,45 @@ def st_listdir_not_cached(path):
         DataFrame containing the list of files in the folder and some metadata.
     """
     dbx_app = st_dropbox_connect()
-    return dbx.dropbox_listdir(path, dbx_app)
+    return dbx.dropbox_listdir(dropbox_path=path, dropbox_app=dbx_app)
 
 
 @st.cache
-def st_load_dataframe(filename, dropbox_path):
+def st_load_dataframe(filename: str, dropbox_path: str):
     dbx_app = st_dropbox_connect()
-    return load.dbx_load_dataframe(filename, dropbox_path, dbx_app)
+    return load.dbx_load_dataframe(
+        filename=filename, dropbox_path=dropbox_path, dropbox_app=dbx_app
+    )
 
 
 @st.cache
 def st_load_metadata():
     dbx_app = st_dropbox_connect()
-    return load.dbx_load_metadata(dbx_app)
+    return load.dbx_load_metadata(dropbox_app=dbx_app)
 
 
 @st.cache
 def st_load_geo_metadata():
     dbx_app = st_dropbox_connect()
-    return load.dbx_load_geo_metadata(dbx_app)
+    return load.dbx_load_geo_metadata(dropbox_app=dbx_app)
 
 
 @st.cache(allow_output_mutation=True)
-def st_load_annotations(filename):
+def st_load_annotations(filename: str, mode: str):
     dbx_app = st_dropbox_connect()
-    return load.dbx_load_label_annotations(filename, dbx_app)
+    return load.dbx_load_annotations(filename=filename, mode=mode, dropbox_app=dbx_app)
 
 
 @st.cache(allow_output_mutation=True)
-def st_load_photo_list(photos_folder):
+def st_load_photo_list(photos_folder: str):
 
     root_folder = DROPBOX_RAW_PHOTOS_ROOT
-    photos_folder_contents = st_listdir(root_folder).item_name.values
+    photos_folder_contents = st_listdir(path=root_folder).item_name.values
 
     index_file = f"index-{photos_folder}.csv"
 
     if index_file in photos_folder_contents:
-        return st_load_dataframe(index_file, root_folder)
+        return st_load_dataframe(filename=index_file, dropbox_path=root_folder)
     else:
         photos_path = f"{root_folder}/{photos_folder}"
         return st_listdir(path=photos_path)[["item_name"]]
@@ -125,7 +127,7 @@ def st_load_photo_list_and_metadata(
     if photos_folder is None:
         return obstacle_metadata, obstacle_metadata.imageURL.unique()
 
-    photos_list = st_load_photo_list(photos_folder)
+    photos_list = st_load_photo_list(photos_folder=photos_folder)
 
     available_metadata = obstacle_metadata.loc[
         lambda df: df.imageURL.isin(photos_list.item_name)
@@ -143,19 +145,27 @@ def st_load_photo(
     dbx_app = st_dropbox_connect()
     dbx_path = f"{DROPBOX_RAW_PHOTOS_ROOT}/{folder_name}"
     return load.dbx_load_photo(
-        photo_name, dbx_path, dbx_app, greyscale_only=greyscale_only
+        photo_name=photo_name,
+        dropbox_folder=dbx_path,
+        dropbox_app=dbx_app,
+        greyscale_only=greyscale_only,
     )
 
 
 @st.cache(allow_output_mutation=True)
 def st_load_photo_from_roof_id(
-    roof_id, metadata, chosen_folder, as_bgr=False, as_greyscale=False
+    roof_id, photos_metadata, chosen_folder, as_bgr=False, as_greyscale=False
 ):
     dbx_app = st_dropbox_connect()
     dbx_path = f"{DROPBOX_RAW_PHOTOS_ROOT}/{chosen_folder}"
 
     return load.dbx_load_photos_from_roof_id(
-        roof_id, metadata, dbx_path, dbx_app, as_bgr, as_greyscale
+        roof_id=roof_id,
+        photos_metadata=photos_metadata,
+        dropbox_path=dbx_path,
+        dropbox_app=dbx_app,
+        as_bgr=as_bgr,
+        as_greyscale=as_greyscale,
     )
 
 
@@ -182,16 +192,22 @@ def st_load_photo_and_coordinates(
     as_greyscale: bool = False,
 ):
     roof_px_coord, obstacles_px_coord = get_coordinates_from_roof_id(
-        roof_id, photos_metadata
+        roof_id=roof_id, photos_metadata=photos_metadata
     )
 
     if as_greyscale:
         satellite_photo = st_load_photo_from_roof_id(
-            roof_id, photos_metadata, chosen_folder, as_greyscale=True
+            roof_id=roof_id,
+            photos_metadata=photos_metadata,
+            chosen_folder=chosen_folder,
+            as_greyscale=True,
         )
     else:
         satellite_photo = st_load_photo_from_roof_id(
-            roof_id, photos_metadata, chosen_folder, as_bgr=True
+            roof_id=roof_id,
+            photos_metadata=photos_metadata,
+            chosen_folder=chosen_folder,
+            as_bgr=True,
         )
 
     return satellite_photo, roof_px_coord, obstacles_px_coord
@@ -211,12 +227,19 @@ def st_load_photo_and_roof(
     )
 
     labelled_photo = draw_roofs_and_obstacles_on_photo(
-        satellite_photo, roof_coords, obstacles_coords
+        satellite_image=satellite_photo,
+        roof_coordinates=roof_coords,
+        obstacle_coordinates=obstacles_coords,
     )
 
-    cropped_roof = rotate_and_crop_roof(satellite_photo, roof_coords)
+    cropped_roof = rotate_and_crop_roof(
+        satellite_image=satellite_photo, roof_coordinates=roof_coords
+    )
+
     labelled_roof = draw_obstacles_on_cropped_roof(
-        cropped_roof, roof_coords, obstacles_coords
+        cropped_roof=cropped_roof,
+        roof_coordinates=roof_coords,
+        obstacles_coordinates=obstacles_coords,
     )
 
     return satellite_photo, labelled_photo, cropped_roof, labelled_roof
@@ -231,4 +254,6 @@ def st_save_annotations(data_to_upload, filename, destination_folder):
 
     data_to_upload.to_csv(file_to_upload, index=False)
 
-    dbx.dropbox_upload_file_to(dbx_app, file_to_upload, destination_path)
+    dbx.dropbox_upload_file_to(
+        dropbox_app=dbx_app, upload_from=file_to_upload, save_to=destination_path
+    )
