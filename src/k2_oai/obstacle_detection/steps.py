@@ -55,7 +55,9 @@ def image_filtering(
     if filtering_sigma < -1 or filtering_sigma == 0 or filtering_sigma % 2 == 0:
         raise ValueError("`filtering_sigma` must be -1 or a positive odd integer")
     if filtering_sigma == -1:
-        sigma_x, sigma_y = np.floor(np.divide(roof_image.shape, 30)).astype(int)
+        sigma_x = np.floor(np.divide(roof_image.shape[0], 30)).astype(int)
+        sigma_y = np.floor(np.divide(roof_image.shape[1], 30)).astype(int)
+
         if sigma_x % 2 == 0:
             sigma_x += 1
 
