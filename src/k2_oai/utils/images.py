@@ -13,12 +13,13 @@ from numpy import ndarray
 from k2_oai.utils._parsers import parse_str_as_coordinates
 
 __all__ = [
-    "read_image_from_bytestring",
-    "pad_image",
-    "downsample_image",
+    "convert_to_bgra",
     "draw_obstacles_on_cropped_roof",
     "draw_obstacles_on_black_fill",
     "draw_roofs_and_obstacles_on_photo",
+    "downsample_image",
+    "pad_image",
+    "read_image_from_bytestring",
     "rotate_and_crop_roof",
 ]
 
@@ -380,3 +381,27 @@ def rotate_and_crop_roof(satellite_image: ndarray, roof_coordinates: str) -> nda
         return bgra_image[
             top_left[0][1] : bot_right[0][1], top_left[0][0] : bot_right[0][0], :
         ]
+
+
+def convert_to_bgra(image: ndarray) -> ndarray:
+    """Converts a BGR/Greyscale image to BGRA
+
+    Parameters
+    ----------
+    image : ndarray
+        The image to convert (BGR or greyscale)
+
+    Returns
+    -------
+        The image as BGRA.
+
+    """
+    # image is greyscale
+    if len(image.shape) == 2:
+        return cv.cvtColor(image, cv.COLOR_GRAY2BGRA)
+    # image is BGR/BGRA...
+    else:
+        if image.shape[2] == 3:
+            return cv.cvtColor(image, cv.COLOR_BGR2BGRA)
+        elif image.shape[2] == 4:
+            return image
