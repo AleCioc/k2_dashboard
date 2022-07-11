@@ -9,7 +9,11 @@ import cv2 as cv
 from numpy.core.multiarray import ndarray
 
 from k2_oai.utils import is_valid_method
-from k2_oai.utils.images import draw_obstacles_on_cropped_roof, rotate_and_crop_roof
+from k2_oai.utils.images import (
+    convert_to_bgra,
+    draw_obstacles_on_cropped_roof,
+    rotate_and_crop_roof,
+)
 
 from .steps import (
     detect_obstacles,
@@ -90,8 +94,10 @@ def manual_obstacle_detection_pipeline(
         satellite_image=satellite_image, roof_coordinates=roof_px_coordinates
     )
 
+    bgra_roof = convert_to_bgra(cropped_roof)
+
     filtered_roof: ndarray = image_filtering(
-        roof_image=cropped_roof,
+        roof_image=bgra_roof,
         filtering_method=filtering_method,
         filtering_sigma=filtering_sigma,
     )
@@ -104,6 +110,9 @@ def manual_obstacle_detection_pipeline(
             histogram_bins=binarization_histogram_bins,
             threshold_tolerance=binarization_tolerance,
         )
+
+    # TODO: output binarization deve essere 8bit single channel per procedere
+    # con connected components analysis
 
     opened_roof: ndarray = image_erosion(
         roof_image=binarized_roof, kernel_size=erosion_kernel_size
