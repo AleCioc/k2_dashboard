@@ -1,7 +1,11 @@
 """
-Launch the dashboard with
+Launch the dashboard with:
 
-streamlit run main.py
+streamlit run /path/to/main.py
+
+if using poetry, then execute
+
+poetry run streamlit run path/to/main.py
 """
 
 from k2_oai.dashboard import run
