@@ -105,13 +105,13 @@ def manual_obstacle_detection_pipeline(
             threshold_tolerance=binarization_tolerance,
         )
 
-    blurred_roof: ndarray = image_erosion(
+    opened_roof: ndarray = image_erosion(
         roof_image=binarized_roof, kernel_size=erosion_kernel_size
     )
 
     if not using_dashboard:
         obstacles_coordinates, _ = detect_obstacles(
-            processed_roof=blurred_roof,
+            processed_roof=opened_roof,
             box_or_polygon=obstacle_boundary_type,
             min_area=obstacle_minimum_area,
             source_image=satellite_image,
@@ -121,7 +121,7 @@ def manual_obstacle_detection_pipeline(
 
     elif using_dashboard:
         obstacles_coordinates, labelled_roof, obstacles_blobs = detect_obstacles(
-            processed_roof=blurred_roof,
+            processed_roof=opened_roof,
             box_or_polygon=obstacle_boundary_type,
             min_area=obstacle_minimum_area,
             source_image=satellite_image,
