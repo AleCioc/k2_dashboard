@@ -50,6 +50,9 @@ def image_filtering(
     def bilateral_filter(_image, _sigma):
         return cv.bilateralFilter(src=_image, d=9, sigmaColor=_sigma, sigmaSpace=_sigma)
 
+    if roof_image.shape[2] != 4:
+        raise TypeError("`roof_image` must be a BGRA image")
+
     is_valid_method(filtering_method, ["b", "g", "bilateral", "gaussian"])
 
     if filtering_sigma < -1 or filtering_sigma == 0 or filtering_sigma % 2 == 0:
@@ -67,20 +70,9 @@ def image_filtering(
         sigma_x, sigma_y = filtering_sigma, filtering_sigma
 
     if filtering_method == "b" or filtering_method == "bilateral":
-
-        if len(roof_image.shape) > 2:
-            if roof_image.shape[2] > 3:  # bgra image
-                bgr_roof = cv.cvtColor(roof_image, cv.COLOR_BGRA2BGR)
-                roof_image[:, :, 0:3] = bilateral_filter(bgr_roof, sigma_x)
-                return roof_image
-            elif roof_image.shape[2] <= 3:  # bgr image
-                filtered_roof = bilateral_filter(roof_image, sigma_x)
-                return cv.cvtColor(filtered_roof, cv.COLOR_BGR2BGRA)
-
-        # grayscale image
-        filtered_roof = bilateral_filter(roof_image, sigma_x)
-        return cv.cvtColor(filtered_roof, cv.COLOR_GRAY2BGRA)
-
+        bgr_roof = cv.cvtColor(roof_image, cv.COLOR_BGRA2BGR)
+        roof_image[:, :, 0:3] = bilateral_filter(bgr_roof, sigma_x)
+        return roof_image
     else:
         return cv.GaussianBlur(roof_image, (sigma_x, sigma_y), 0)
 
@@ -96,8 +88,11 @@ def image_simple_binarization(roof_image: ndarray) -> ndarray:
     Return
     ------
     ndarray
-        The thresholded image.
+        The thresholded image as 1D/greyscale image
     """
+
+    if roof_image.shape[2] != 4:
+        raise TypeError("`roof_image` must be a BGRA image")
 
     zeros_in_mask = int(np.sum(roof_image[:, :, 3] == 0))
 
@@ -109,7 +104,7 @@ def image_simple_binarization(roof_image: ndarray) -> ndarray:
 
     if np.sum(binarized_roof == 255) > np.sum(binarized_roof == 0) - zeros_in_mask:
         binarized_roof = cv.bitwise_not(binarized_roof)
-        binarized_roof = cv.bitwise_and(binarized_roof, roof_image[:, :, 3])
+        binarized_roof = cv.bitwise_and(binarized_roof[:, :, 0], roof_image[:, :, 3])
 
     return binarized_roof
 
@@ -136,7 +131,7 @@ def image_composite_binarization(
     Returns
     -------
     ndarray
-        The thresholded image
+        The thresholded image, which is 1D.
 
     """
     zeros_in_mask = int(np.sum(roof_image[:, :, 3] == 0))
@@ -149,11 +144,11 @@ def image_composite_binarization(
     )
 
     binarized_roof = cv.bitwise_or(light_thresholded_roof, dark_thresholded_roof)
-    binarized_roof = cv.bitwise_and(binarized_roof[:, :, 0], roof_image[:, :, 3])
+    binarized_roof = cv.bitwise_and(binarized_roof, roof_image[:, :, 3])
 
     if np.sum(binarized_roof == 255) > np.sum(binarized_roof == 0) - zeros_in_mask:
         binarized_roof = cv.bitwise_not(binarized_roof)
-        binarized_roof = cv.bitwise_and(binarized_roof, roof_image[:, :, 3])
+        binarized_roof = cv.bitwise_and(binarized_roof[:, :, 0], roof_image[:, :, 3])
 
     return binarized_roof
 
@@ -206,7 +201,7 @@ def detect_obstacles(
     Parameters
     ----------
     processed_roof : ndarray
-        Input image.
+        Roof after binarization.
     box_or_polygon : {"box", "polygon"}, default: 'box'
         String indicating whether to using bounding boxes or bounding polygon.
     min_area : int, default: 0
@@ -225,12 +220,15 @@ def detect_obstacles(
     # TODO: write docs for return values
     """
 
+    if len(processed_roof.shape) != 2:
+        raise TypeError("`processed_roof` must be a 1D binarized image.")
+
+    is_valid_method(box_or_polygon, ["box", "polygon"])
+
     if min_area == -1:
         min_area: int = int(np.max(processed_roof.shape) / 20)
     elif min_area < -1:
         raise ValueError("`min_area` must be greater than -1.")
-
-    is_valid_method(box_or_polygon, ["box", "polygon"])
 
     _, obstacles_blobs, blobs_stats, blobs_centroids = cv.connectedComponentsWithStats(
         processed_roof, connectivity=8
