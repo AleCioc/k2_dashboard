@@ -75,9 +75,9 @@ def obstacle_detection_page(
             options=("Simple", "Composite"),
         ).lower()
 
-        if chosen_binarisation_method == "Composite":
+        if chosen_binarisation_method == "composite":
             chosen_binarisation_tolerance = st.slider(
-                "Tolerance for the composite binarisation method. ",
+                "Tolerance for the composite binarisation method. "
                 "If -1, tolerance will be deduced from the histogram's variance",
                 min_value=-1,
                 max_value=255,
@@ -90,6 +90,7 @@ def obstacle_detection_page(
             "If -1, it will be inferred",
             min_value=-1,
             max_value=100,
+            step=2,
         )
 
         chosen_min_area = st.slider(
@@ -98,10 +99,16 @@ def obstacle_detection_page(
             max_value=100,
         )
 
-        chosen_boundary_type = st.radio(
+        st.radio(
             "Select the desired drawing technique",
             options=("Bounding Box", "Bounding Polygon"),
+            key="drawing_technique",
         )
+
+        if st.session_state["drawing_technique"] == "Bounding Box":
+            chosen_boundary_type = "box"
+        else:
+            chosen_boundary_type = "polygon"
 
         roof_annotations = {
             "filtering_sigma": chosen_filtering_sigma,
