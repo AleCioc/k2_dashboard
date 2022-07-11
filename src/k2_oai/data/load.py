@@ -110,11 +110,11 @@ def dbx_create_label_annotations(dropbox_app, num_checkpoints: int = 0):
 
 
 def dbx_load_annotations(filename, mode, dropbox_app):
-    if mode not in ["label", "hyperparam", "hyperparameters"]:
+    if mode not in ["label", "labels", "hyperparam", "hyperparameters"]:
         raise ValueError(
-            "`mode` must be one of 'label', 'hyperparam' or 'hyperparameters'"
+            "`mode` must be one of 'label', 'labels', 'hyperparam' or 'hyperparameters'"
         )
-    elif mode == "label":
+    elif mode in ["label", "labels"]:
         dbx_path = DROPBOX_LABEL_ANNOTATIONS_PATH
     else:
         dbx_path = DROPBOX_HYPERPARAM_ANNOTATIONS_PATH
