@@ -1,3 +1,7 @@
+"""
+Launches the streamlit dashboard.
+"""
+
 import os
 
 import streamlit as st
@@ -41,7 +45,3 @@ def run():
         )
 
         pages_options[app_mode]()
-
-
-if __name__ == "__main__":
-    run()
