@@ -150,8 +150,8 @@ def obstacle_detection_page(
 
     (
         obstacles_coordinates,
-        labelled_roof,
         obstacles_blobs,
+        labelled_roof,
     ) = pipelines.manual_obstacle_detection_pipeline(
         satellite_image=satellite_photo,
         roof_px_coordinates=roof_coordinates,
@@ -202,7 +202,7 @@ def obstacle_detection_page(
     )
 
     st_results_widgets[1].image(
-        obstacles_blobs,
+        (obstacles_blobs * 60) % 256,
         use_column_width=True,
         caption="Obstacles Blobs",
     )
