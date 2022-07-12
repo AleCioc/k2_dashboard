@@ -172,7 +172,7 @@ def automatic_obstacle_detection_pipeline(
         the binarization threshold value.
     binarization_tolerance : int, default: -1.
         Required for composite binarization only, this is the value to be added and
-        subtracted from the binarization threhsold to obtain the light and dark
+        subtracted from the binarization threshold to obtain the light and dark
         threshodled images.
     erosion_kernel_size : int, default: -1.
         Size of the kernel used for the morphological opening. Must be a positive, odd
