@@ -106,7 +106,7 @@ def image_simple_binarization(roof_image: ndarray) -> ndarray:
         binarized_roof = cv.bitwise_not(binarized_roof)
         binarized_roof = cv.bitwise_and(binarized_roof[:, :, 0], roof_image[:, :, 3])
 
-    return binarized_roof
+    return cv.cvtColor(binarized_roof, cv.COLOR_BGRA2GRAY)
 
 
 def image_composite_binarization(
