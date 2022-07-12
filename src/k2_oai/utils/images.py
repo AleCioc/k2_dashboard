@@ -189,7 +189,7 @@ def draw_obstacles_on_cropped_roof(
         center = roof_coords[0]
 
         for obst in obstacles_coordinates:
-            points_obs: np.array = parse_str_as_coordinates(obst)
+            points_obs: ndarray = parse_str_as_coordinates(obst)
 
             obst_vertex = len(points_obs)
 
@@ -283,7 +283,7 @@ def draw_obstacles_on_black_fill(
     # polygonal roof
     else:
         for obst in obstacle_coordinates:
-            points: np.array = parse_str_as_coordinates(obst).reshape((-1, 1, 2))
+            points: ndarray = parse_str_as_coordinates(obst).reshape((-1, 1, 2))
 
             top_left = np.min(roof_coords, axis=0)
 
