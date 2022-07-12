@@ -123,17 +123,17 @@ def manual_obstacle_detection_pipeline(
             processed_roof=opened_roof,
             box_or_polygon=obstacle_boundary_type,
             min_area=obstacle_minimum_area,
-            source_image=satellite_image,
+            cropped_roof=cropped_roof,
             draw_obstacles=False,
         )
         return obstacles_coordinates
 
     elif using_dashboard:
-        obstacles_coordinates, labelled_roof, obstacles_blobs = detect_obstacles(
+        obstacles_coordinates, obstacles_blobs, labelled_roof = detect_obstacles(
             processed_roof=opened_roof,
             box_or_polygon=obstacle_boundary_type,
             min_area=obstacle_minimum_area,
-            source_image=satellite_image,
+            cropped_roof=cropped_roof,
             draw_obstacles=True,
         )
         return obstacles_coordinates, obstacles_blobs, labelled_roof
@@ -211,14 +211,14 @@ def automatic_obstacle_detection_pipeline(
             processed_roof=light_blurred_roof,
             box_or_polygon=obstacle_boundary_type,
             min_area=obstacle_minimum_area,
-            source_image=satellite_image,
+            cropped_roof=satellite_image,
             draw_obstacles=False,
         )
         dark_obstacles_coords, _ = detect_obstacles(
             processed_roof=dark_blurred_roof,
             box_or_polygon=obstacle_boundary_type,
             min_area=obstacle_minimum_area,
-            source_image=satellite_image,
+            cropped_roof=satellite_image,
             draw_obstacles=False,
         )
 
@@ -229,14 +229,14 @@ def automatic_obstacle_detection_pipeline(
             processed_roof=light_blurred_roof,
             box_or_polygon=obstacle_boundary_type,
             min_area=obstacle_minimum_area,
-            source_image=satellite_image,
+            cropped_roof=satellite_image,
             draw_obstacles=False,
         )
         dark_obstacles_coords, dark_blobs = detect_obstacles(
             processed_roof=dark_blurred_roof,
             box_or_polygon=obstacle_boundary_type,
             min_area=obstacle_minimum_area,
-            source_image=satellite_image,
+            cropped_roof=satellite_image,
             draw_obstacles=False,
         )
 

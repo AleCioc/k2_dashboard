@@ -190,7 +190,7 @@ def detect_obstacles(
     processed_roof: ndarray,
     box_or_polygon: str = "box",
     min_area: int = -1,
-    source_image: ndarray | None = None,
+    cropped_roof: ndarray | None = None,
     draw_obstacles: bool = False,
 ):
     """Finds the connected components in a binary image and assigns a label to them.
@@ -208,7 +208,7 @@ def detect_obstacles(
         Minimum area of the connected components to be kept. Defaults to zero.
         If set to "auto", it will default to the largest component of the image
         (height or width), divided by 10 and then rounded up.
-    source_image : ndarray or None, default: None
+    cropped_roof : ndarray or None, default: None
         The image from where the roof was cropped. Used only if the param draw_obstacles
         is True.
     draw_obstacles : bool, default: False
@@ -234,23 +234,23 @@ def detect_obstacles(
         processed_roof, connectivity=8
     )
 
-    if draw_obstacles and source_image is None:
+    if draw_obstacles and cropped_roof is None:
         raise ValueError("`source_image` cannot be None when `draw_obstacles` is True")
     elif draw_obstacles:
         if box_or_polygon == "box":
             obstacles_coordinates, labelled_roof = get_bounding_boxes(
-                blobs_stats, min_area, source_image, draw_obstacles=True
+                blobs_stats, min_area, cropped_roof, draw_obstacles=True
             )
         else:
             obstacles_coordinates, labelled_roof = get_bounding_polygon(
                 blobs_stats,
                 obstacles_blobs,
                 min_area,
-                source_image,
+                processed_roof,
                 draw_obstacles=True,
             )
 
-        return obstacles_coordinates, labelled_roof, obstacles_blobs
+        return obstacles_coordinates, obstacles_blobs, labelled_roof
     elif not draw_obstacles:
         if box_or_polygon == "box":
             obstacles_coordinates = get_bounding_boxes(

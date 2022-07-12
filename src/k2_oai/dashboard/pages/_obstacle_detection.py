@@ -195,22 +195,22 @@ def obstacle_detection_page(
     st_results_widgets = st.columns(3)
 
     st_results_widgets[0].image(
-        cropped_roof,
+        k2_labelled_roof,
         use_column_width=True,
         channels="BGRA",
         caption="Cropped Roof (RGB) with Database Labels",
     )
 
     st_results_widgets[1].image(
-        (obstacles_blobs * 60) % 256,
+        obstacles_blobs,
         use_column_width=True,
-        caption="Obstacle Blobs (Greyscale)",
+        caption="Obstacles Blobs",
     )
 
     st_results_widgets[2].image(
         labelled_roof,
         use_column_width=True,
-        caption=f"Auto Labelled {chosen_boundary_type}",
+        caption="Algorithm Labels",
     )
 
     with st.expander("View the annotations:", expanded=True):
